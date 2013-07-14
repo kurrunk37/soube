@@ -1,11 +1,13 @@
 (ns soube.handler
   (:use [compojure.core]
-				[ring.util.response :only [redirect response]]
+				;[ring.util.response :only [redirect response]]
 				[ring.middleware session params keyword-params])
   (:require [compojure.handler :as handler]
             [compojure.route :as route]
-						[jopbox.client :as dropbox]
             [clostache.parser :as clostache]
+;            [clj-http.client :as client]
+						[soube.install :as install]
+						[soube.admin :as admin]
 						[soube.config :as config]))
 
 (defn render-template [template-file params]
@@ -15,54 +17,31 @@
 				(str "templates/" template-file ".mustache")))
 		params))
 
-(defn index []
+(defn index [req]
   (render-template "index" {:name "is正全"}))
 
-(defn admin-index []
-  (render-template "admin" {:name "one admin"}))
+;(defn test-https []
+;  (str (client/get "https://alioth.debian.org" {:insecure? true})))
+
 
 (defn post [id]
 	(str "hello" id))
-
-(defn authenticated
-  [{session :session}]
-  (boolean (:auth-token session)))
-
-(defn authenticate
-	[req]
-  (let [{session :session}     req
-        {port    :server-port} req
-        {hostname  :server-name} req
-        {path :uri} req
-        {scheme  :scheme}      req
-        {params  :params}      req
-        {token :oauth_token uid :uid error :oauth_problem} params
-        ;{token :oauth_token verifier :oauth_verifier error :oauth_problem} params
-        url (str (name scheme) "://" hostname (if (= 80 port) "" (str ":" port)) "/admin")]
-    (cond
-      error
-        (response (str "Authentication error " error))
-      (and token uid)
-        (do
-          (-> (redirect url)
-            (assoc :session (assoc session :auth-token token))))
-      :else
-				(let [request-token (dropbox/fetch-request-token config/consumer)
-					dropboxurl (dropbox/authorization-url config/consumer request-token)]
-          (redirect (str dropboxurl "&oauth_callback=" url))))))
 
 ;; Authentication handler
 ;; 验证的逻辑
 (defn wrap-auth
 	[handler]
 	(fn [req]
-		(if (and (.startsWith (:uri req) "/admin") (not (authenticated req)))
-          (authenticate req)
+		(if (and (.startsWith (:uri req) "/admin") (not (admin/authenticated req)))
+          (admin/authenticate req)
           (handler req))))
 
 (defroutes app-routes
-  (GET "/" [] (index))
-  (GET "/admin" [] (admin-index))
+  (GET "/" [] index)
+  (GET "/admin" [] admin/view-index)
+  (GET "/admin/list" [] admin/view-list)
+  (GET "/install" [] install/do)
+;  (GET "/test_https" [] (test-https))
   (GET ["/:id", :id  #"[0-9]+"] [id] (post id))
   (route/resources "/")
   (route/not-found "Not Found"))
