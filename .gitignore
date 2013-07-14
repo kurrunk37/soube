@@ -5,3 +5,4 @@ pom.xml
 /target/
 .lein-*
 *.log
+config.clj
