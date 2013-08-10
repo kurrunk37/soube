@@ -4,28 +4,12 @@
 				[ring.middleware session params keyword-params])
   (:require [compojure.handler :as handler]
             [compojure.route :as route]
-            [clostache.parser :as clostache]
 ;            [clj-http.client :as client]
 						[soube.install :as install]
 						[soube.admin :as admin]
+						[soube.page :as page]
 						[soube.config :as config]))
 
-(defn render-template [template-file params]
-	(clostache/render 
-		(slurp 
-			(clojure.java.io/resource 
-				(str "templates/" template-file ".mustache")))
-		params))
-
-(defn index [req]
-  (render-template "index" {:name "is正全"}))
-
-;(defn test-https []
-;  (str (client/get "https://alioth.debian.org" {:insecure? true})))
-
-
-(defn post [id]
-	(str "hello" id))
 
 ;; Authentication handler
 ;; 验证的逻辑
@@ -37,12 +21,13 @@
           (handler req))))
 
 (defroutes app-routes
-  (GET "/" [] index)
+  (GET "/" [] page/view-index)
   (GET "/admin" [] admin/view-index)
-  (GET "/admin/list" [] admin/view-list)
-  (GET "/install" [] install/do)
+  (GET "/admin/sync.json" [] admin/markdown-sync)
+  (GET "/admin/info" [] admin/account-info)
+  (GET "/admin/install" [] admin/init-table)
 ;  (GET "/test_https" [] (test-https))
-  (GET ["/:id", :id  #"[0-9]+"] [id] (post id))
+  (GET ["/article/:id", :id  #"[0-9]+"] [id] (page/view-article id))
   (route/resources "/")
   (route/not-found "Not Found"))
 

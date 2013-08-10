@@ -58,7 +58,7 @@
 (defn get-file
   "Downloads a file."
   [consumer access-token-response root path]
-  (let [request-url (format "https://api-content.dropbox.com/1/files/%s/%s" root path)]
+  (let [request-url (format "https://api-content.dropbox.com/1/files/%s%s" root path)]
     (:body (http/get request-url
                      {:query-params (make-credentials consumer
                                                       access-token-response
