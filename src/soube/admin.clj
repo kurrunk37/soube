@@ -35,9 +35,22 @@
               [:id :path :revision :modified]
               table-name
               (sql/where {:src src :account uid})))]
-    (if (empty? l)
-      {}
-      (zipmap (map #(:path %) l) l))))
+    (zipmap (map #(:path %) l) l)))
+      ;(group-by :path l))))
+
+(defn parse-markdown
+  "解析dropbox的文件，分离元数据和正文"
+  [file-content]
+  (let [lines (clojure.string/split-lines file-content)
+        meta-list (map #(re-matches #"^([\w]+):[\s]*(.+)$" %)
+                   (take-while #(re-matches #"^[\w]+:(.+)$" %) lines))
+        file-clj (markdown/to-clj
+                   (markdown/mp
+                     (clojure.string/join
+                       "\n"
+                       (drop (count meta-list) lines))))
+        meta-map (into {} (for [[_ k v] meta-list] [(keyword k) v]))]
+    {:meta meta-map :md-clj file-clj}))
 
 ;clj-time用法
 ;(parse (with-locale (formatters :rfc822) Locale/ENGLISH) "Wed, 4 Jul 2001 12:08:56 -0700" )
@@ -46,13 +59,15 @@
   [action hostname uid md file-content]
   (println action)
   (let [table-name (str ((config/account-dict hostname) :table-prefix) "posts")
-        file-clj (markdown/to-clj (markdown/mp file-content))
-        title (clojure.string/join " " (:content (some #(if (= (:tag %) :h1) %) file-clj)))
+        {file-clj :md-clj  metadata :meta} (parse-markdown file-content)
+        title (or (:Title metadata)
+                  (clojure.string/join " " (:content (some #(if (= (:tag %) :h1) %) file-clj))))
         modified (timef/unparse
                    (timef/formatter "yyyy-MM-dd HH:mm:ss")
                    (timef/parse
                      (timef/with-locale (timef/formatters :rfc822) java.util.Locale/ENGLISH)
-                     (:modified md)))]
+                     (:modified md)))
+        date (or (:Date metadata) modified)]
     (cond
       (= action :insert)
         (jdbc/insert!
@@ -60,7 +75,7 @@
           table-name
           (merge
             (select-keys md [:path :revision])
-            {:src "dropbox", :account uid, :markdown file-content, :title title :modified modified}))
+            {:src "dropbox", :account uid, :date date, :markdown file-content, :title title :modified modified}))
       (= action :update)
         (jdbc/update!
           config/mysql-db
@@ -68,6 +83,7 @@
           {:markdown file-content,
            :title title,
            :modified modified,
+           :date date,
            :revision (:revision md)}
           (sql/where {:account uid :path (:path md)})))))
 
@@ -94,12 +110,11 @@
                                access-token
                                "sandbox" ;(:root md)
                                (:path md))]
-            (println file-content)
             (cond
               (not db-md)
-                (update-db :insert (:server-name req) (:uid (:session req)) md file-content)
+                (update-db :insert (:server-name req) (:uid access-token) md file-content)
               (not (= (:revision db-md) (:revision md)))
-                (update-db :update (:server-name req) (:uid (:session req)) md file-content))))))
+                (update-db :update (:server-name req) (:uid access-token) md file-content))))))
     (if (empty? md-list)
       "list is empty"
       (cheshire/generate-string md-list))))
@@ -113,6 +128,7 @@
         [:id :integer "UNSIGNED" "PRIMARY KEY" "AUTO_INCREMENT"]
         [:path "varchar(64)" "not null"]
         [:revision :smallint "UNSIGNED" "not null" "default 0"]
+        [:date "datetime" "not null"]
         [:modified "datetime" "not null"]
         [:title "tinytext" "not null"]
         [:src "enum('dropbox','write')" "not null" "default 'write'"]
@@ -148,8 +164,7 @@
               :session
               (assoc
                 session
-                :access-token (dropbox/fetch-access-token-response config/consumer (:request-token session))
-                :uid uid)))
+                :access-token (dropbox/fetch-access-token-response config/consumer (:request-token session)))))
       :else
 				(let [request-token (dropbox/fetch-request-token config/consumer)
               dropboxurl (dropbox/authorization-url config/consumer request-token)]
