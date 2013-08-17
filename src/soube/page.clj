@@ -6,7 +6,6 @@
             [clojure.java.jdbc.sql :as sql]
 						[soube.jopbox :as dropbox]
 						;[cheshire.core :as cheshire]
-            [endophile.core :as markdown]
             [clj-time [format :as timef] [coerce :as timec]]
 						[soube.config :as config]))
 
@@ -26,5 +25,15 @@
 (defn view-index [req]
   (render-page "index" {:name "is正全"}))
 
-(defn view-article [id]
-  (render-page "index" {:name "is正全"}))
+(defn view-article [req]
+  ; (render-page "post" (first l))
+  (let [table-name (str ((config/account-dict (:server-name req)) :table-prefix) "posts")
+        id (:id (:params req))
+        l (jdbc/query
+            config/mysql-db
+            (sql/select [:html] table-name (sql/where {:id id})))
+        html (:html (first l))]
+    (if html
+      (render-page "post" {:markdown html})
+      (render-page "post" {:markdown "404"}))))
+

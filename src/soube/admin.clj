@@ -1,5 +1,6 @@
 (ns soube.admin
   (:use [ring.util.response :only [redirect response]]
+        [markdown.core :only [md-to-html-string]]
 				[ring.middleware session params keyword-params])
   (:require [clostache.parser :as clostache]
             [clojure.java.jdbc :as jdbc]
@@ -42,15 +43,14 @@
   "解析dropbox的文件，分离元数据和正文"
   [file-content]
   (let [lines (clojure.string/split-lines file-content)
-        meta-list (map #(re-matches #"^([\w]+):[\s]*(.+)$" %)
-                   (take-while #(re-matches #"^[\w]+:(.+)$" %) lines))
-        file-clj (markdown/to-clj
-                   (markdown/mp
-                     (clojure.string/join
-                       "\n"
-                       (drop (count meta-list) lines))))
-        meta-map (into {} (for [[_ k v] meta-list] [(keyword k) v]))]
-    {:meta meta-map :md-clj file-clj}))
+        meta-lines (take-while #(re-matches #"^[\w]+:(.+)$" %) lines)
+        md-string (clojure.string/join "\n" (drop (count meta-lines) lines))
+        file-clj (markdown/to-clj (markdown/mp md-string))
+        meta-map (into {}
+                       (for
+                         [[_ k v] (map #(re-matches #"^([\w]+):[\s]*(.+)$" %) meta-lines)]
+                         [(keyword k) v]))]
+    {:meta meta-map :md-clj file-clj :md-string md-string}))
 
 ;clj-time用法
 ;(parse (with-locale (formatters :rfc822) Locale/ENGLISH) "Wed, 4 Jul 2001 12:08:56 -0700" )
@@ -59,7 +59,7 @@
   [action hostname uid md file-content]
   (println action)
   (let [table-name (str ((config/account-dict hostname) :table-prefix) "posts")
-        {file-clj :md-clj  metadata :meta} (parse-markdown file-content)
+        {file-clj :md-clj  metadata :meta md-string :md-string} (parse-markdown file-content)
         title (or (:Title metadata)
                   (clojure.string/join " " (:content (some #(if (= (:tag %) :h1) %) file-clj))))
         modified (timef/unparse
@@ -67,24 +67,24 @@
                    (timef/parse
                      (timef/with-locale (timef/formatters :rfc822) java.util.Locale/ENGLISH)
                      (:modified md)))
-        date (or (:Date metadata) modified)]
+        date (or (:Date metadata) modified)
+        todb (merge
+               (select-keys md [:path :revision])
+               {:src "dropbox",
+                :account uid,
+                :date date,
+                :markdown file-content,
+                :title title,
+                :modified modified,
+                :html (md-to-html-string md-string)})]
     (cond
       (= action :insert)
-        (jdbc/insert!
-          config/mysql-db
-          table-name
-          (merge
-            (select-keys md [:path :revision])
-            {:src "dropbox", :account uid, :date date, :markdown file-content, :title title :modified modified}))
+        (jdbc/insert!  config/mysql-db table-name todb)
       (= action :update)
         (jdbc/update!
           config/mysql-db
           table-name
-          {:markdown file-content,
-           :title title,
-           :modified modified,
-           :date date,
-           :revision (:revision md)}
+          (select-keys todb [:markdown :title :modified :date :revision :html])
           (sql/where {:account uid :path (:path md)})))))
 
 ; 文件同步

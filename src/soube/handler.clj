@@ -27,7 +27,7 @@
   (GET "/admin/info" [] admin/account-info)
   (GET "/admin/install" [] admin/init-table)
 ;  (GET "/test_https" [] (test-https))
-  (GET ["/article/:id", :id  #"[0-9]+"] [id] (page/view-article id))
+  (GET ["/article/:id", :id  #"[0-9]+"] [] page/view-article)
   (route/resources "/")
   (route/not-found "Not Found"))
 
