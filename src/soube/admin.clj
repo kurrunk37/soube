@@ -11,19 +11,24 @@
             [clj-time [format :as timef] [coerce :as timec]]
 						[soube.config :as config]))
 
-(defn render-template [template-file params]
-	(clostache/render 
-		(slurp 
-			(clojure.java.io/resource 
-				(str "templates/" template-file ".mustache")))
-		params))
+(defn render-page [template data]
+    (clostache/render-resource
+      (str "templates/admin/" template ".mustache")
+      data
+      (reduce
+        (fn [accum pt]
+          (assoc accum pt (slurp
+                            (clojure.java.io/resource
+                                    (str "templates/admin/" (name pt) ".mustache")))))
+        {}
+        [:header :footer])))
 
 (defn view-index [req]
-  (render-template "admin" {:name (str (:session req))}))
+  (render-page "dashboard" {:name (str (:session req))}))
 
 (defn account-info [req]
   (let [info (dropbox/account-info config/consumer (:access-token (:session req)))]
-    (render-template "admin" {:name info})))
+    (render-page "admin" {:name info})))
 
 ; 取出现有数据
 (defn get-db-dict

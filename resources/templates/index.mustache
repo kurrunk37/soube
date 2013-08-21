@@ -1,7 +1,6 @@
 {{> header}}
-	<div class="container">
-		<h1>hello {{name}}</h1>
-	<p>How do you do?</p>
-	胡正全
-	</div>
+		{{#list}}
+	  	<div>{{date}} <br><a href="/post/{{id}}.html">{{title}}</a></div>
+		{{/list}}
+		{{^list}}没有文章{{/list}}
 {{> footer}}

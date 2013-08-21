@@ -22,18 +22,33 @@
         {}
         [:header :footer])))
 
-(defn view-index [req]
-  (render-page "index" {:name "is正全"}))
+(defn view-index
+  "首页，文章列表"
+  [req]
+  (let [table-name (str ((config/account-dict (:server-name req)) :table-prefix) "posts")
+        l (jdbc/query
+            config/mysql-db
+            (sql/select [:date :title :id] table-name (sql/order-by [:date])))]
+    (render-page "index" {:list l})))
 
-(defn view-article [req]
+(defn view-article
+  "文章页"
+  [req]
   ; (render-page "post" (first l))
   (let [table-name (str ((config/account-dict (:server-name req)) :table-prefix) "posts")
         id (:id (:params req))
+        gettype (:type (:params req))
         l (jdbc/query
             config/mysql-db
-            (sql/select [:html] table-name (sql/where {:id id})))
-        html (:html (first l))]
-    (if html
-      (render-page "post" {:markdown html})
+            (sql/select [:markdown :html :title] table-name (sql/where {:id id})))
+        thepost (first l)]
+    (if thepost
+      (cond
+        (= gettype "html")
+          (render-page "post" {:markdown (:html thepost) :page-title (:title thepost)})
+        (= gettype "md")
+          (:markdown thepost)
+        :else
+          (response (str "404")))
       (render-page "post" {:markdown "404"}))))
 

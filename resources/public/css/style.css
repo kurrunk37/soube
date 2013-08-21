@@ -1,0 +1,10 @@
+
+body{background-color:#eee;}
+div.content{max-width:800px;margin:0px auto;margin-top:60px;}
+footer {
+	background: #111;
+	color: #666;
+	text-align: center;
+	padding: 1em;
+	font-size: 80%;
+}

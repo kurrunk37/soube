@@ -1,0 +1,50 @@
+#layout {
+	padding-left: 75px;
+	position: relative;
+}
+#nav {
+	margin-left: -75px;
+	width: 75px;
+	background: rgb(37, 42, 58);
+	text-align: center;
+	position: fixed;
+	top: 0;
+	bottom: 0;
+	overflow: auto;
+}
+#nav .pure-menu { background: transparent; border: none; text-align: left; }
+#nav .nav-menu-button { display: none; color:white;}
+#nav .pure-menu a {color: #fff;padding:10px 0px; text-align:center;}
+#nav .pure-menu a span{display:none}
+#nav .pure-menu-heading{margin-bottom:20px;}
+#nav .pure-menu a:hover, #nav .pure-menu a:focus { background: rgb(55, 60, 90); }
+
+.icon-2{font-size:2em}
+.icon-3{font-size:3em}
+.icon-4{font-size:4em}
+/*
+div.content{
+	width: 44em;
+	margin-top: 25px;
+}
+*/
+footer{
+	position: fixed;
+	bottom:0px;
+}
+
+@media (max-width: 867px) {
+	#layout { padding-left: -75px; }
+	#main { position: fixed; top: 33%; right: 0; bottom: 0; left: 75px; overflow: auto; width: auto;}
+}
+
+@media (max-width: 475px) {
+	#layout, #nav, #list, #main { position: static; margin: 0; padding: 0; }
+	#nav { width: 100%; min-height: 40px; position: relative; }
+	#nav .nav-menu-button { display: block; top: 0.5em; right: 0.5em; position: absolute; }
+	#nav .pure-menu a span{display:inline}
+	#nav .pure-menu a i.icon-2{font-size:1em}
+	#nav.active { height: 80%; }
+	.nav-inner { display: none; }
+	#nav.active .nav-inner { display: block; }
+}
