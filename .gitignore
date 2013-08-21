@@ -7,3 +7,4 @@ pom.xml
 *.log
 old
 test*
+/*.sh
