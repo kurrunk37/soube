@@ -13,7 +13,9 @@
 
 	<ul>
 		<li class="pure-menu-selected"><a href="#">示例</a></li>
-		<li><a href="#">Finance</a></li>
+		{{#tags}}
+		<li><a href="/tag/{{{.}}}">{{.}}</a></li>
+		{{/tags}}
 	</ul>
 </header>
 

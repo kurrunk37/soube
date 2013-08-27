@@ -16,7 +16,7 @@
 (defn wrap-auth
 	[handler]
 	(fn [req]
-		(if (and (.startsWith (:uri req) "/_admin") (not (admin/authenticated req)))
+		(if (and (.startsWith (:uri req) "/admin") (not (admin/authenticated req)))
           (admin/authenticate req)
           (handler req))))
 
@@ -27,6 +27,8 @@
   (GET "/admin/sync.json" [] admin/markdown-sync)
   (GET "/admin/info" [] admin/account-info)
   (GET "/admin/install" [] admin/init-table)
+  (GET "/admin/tools" [] admin/view-tools)
+  (GET "/test" [] page/view-test)
 ;  (GET "/test_https" [] (test-https))
   (GET ["/post/:id.:type", :id  #"[0-9]+", :type #"(html|md)"] [] page/view-article)
   (route/resources "/")

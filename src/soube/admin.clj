@@ -9,6 +9,7 @@
 						[cheshire.core :as cheshire]
             [endophile.core :as markdown]
             [clj-time [format :as timef] [coerce :as timec]]
+						[soube.to :as to]
 						[soube.config :as config]))
 
 (defn render-page [template data]
@@ -26,6 +27,9 @@
 (defn view-index [req]
   (render-page "dashboard" {:name (str (:session req))}))
 
+(defn view-tools [req]
+  (render-page "tools" {:name (str (:session req))}))
+
 (defn account-info [req]
   (let [info (dropbox/account-info config/consumer (:access-token (:session req)))]
     (render-page "admin" {:name info})))
@@ -34,7 +38,8 @@
 (defn get-db-dict
   "从数据库中把元数据取出,返回以:path为key的map"
   [src uid hostname]
-  (let [table-name (str ((config/account-dict hostname) :table-prefix) "posts")
+  (println (str src uid hostname))
+  (let [table-name (to/h2t hostname)
         l (jdbc/query
             config/mysql-db
             (sql/select
@@ -63,25 +68,26 @@
   "新的md"
   [action hostname uid md file-content]
   (println action)
-  (let [table-name (str ((config/account-dict hostname) :table-prefix) "posts")
+  (let [table-name (to/h2t hostname)
         {file-clj :md-clj  metadata :meta md-string :md-string} (parse-markdown file-content)
-        title (or (:Title metadata)
-                  (clojure.string/join " " (:content (some #(if (= (:tag %) :h1) %) file-clj))))
+        ;title (or (:title metadata)
+                  ;(clojure.string/join " " (:content (some #(if (= (:tag %) :h1) %) file-clj))))
         modified (timef/unparse
                    (timef/formatter "yyyy-MM-dd HH:mm:ss")
                    (timef/parse
                      (timef/with-locale (timef/formatters :rfc822) java.util.Locale/ENGLISH)
                      (:modified md)))
-        date (or (:Date metadata) modified)
+        date (or (:date metadata) modified)
         todb (merge
                (select-keys md [:path :revision])
+               (select-keys metadata [:id :title :tags :categories])
                {:src "dropbox",
                 :account uid,
                 :date date,
                 :markdown file-content,
-                :title title,
                 :modified modified,
                 :html (md-to-html-string md-string)})]
+    (println (:title metadata))
     (cond
       (= action :insert)
         (jdbc/insert!  config/mysql-db table-name todb)
@@ -101,12 +107,12 @@
                        config/consumer
                        access-token
                        "sandbox"
-                       ((config/account-dict (:server-name req)) :dirname))
+                       (str (:server-name req) "/posts"))
         md-list (seq (filter #(and
                                 (= (:mime_type %) "application/octet-stream")
                                 (= (:is_dir %) false))
                              (:contents dir-matadata)))
-        db-map (get-db-dict "dropbox" (:uid (:session req)) (:server-name req))]
+        db-map (get-db-dict "dropbox" (:uid (:access-token (:session req))) (:server-name req))]
     (doseq [md md-list]
       (let [db-md (db-map (:path md))]
         (if (not (and db-md (= (:revision db-md) (:revision md))))
@@ -129,7 +135,7 @@
   (let [hostname (:server-name req)]
     (jdbc/with-connection config/mysql-db
       (jdbc/create-table
-        (str "if not exists " ((config/account-dict hostname) :table-prefix) "posts")
+        (str "if not exists " (to/h2t hostname))
         [:id :integer "UNSIGNED" "PRIMARY KEY" "AUTO_INCREMENT"]
         [:path "varchar(64)" "not null"]
         [:revision :smallint "UNSIGNED" "not null" "default 0"]
@@ -138,6 +144,8 @@
         [:title "tinytext" "not null"]
         [:src "enum('dropbox','write')" "not null" "default 'write'"]
         [:account "tinytext"]
+        [:tags "tinytext"]
+        [:categories "varchar(64)"]
         [:markdown "mediumtext"]
         [:html "mediumtext"]
         ))

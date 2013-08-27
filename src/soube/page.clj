@@ -7,7 +7,8 @@
 						[soube.jopbox :as dropbox]
 						;[cheshire.core :as cheshire]
             [clj-time [format :as timef] [coerce :as timec]]
-						[soube.config :as config]))
+						[soube.config :as config]
+						[soube.to :as to]))
 
 (defn render-page
     [template data]
@@ -25,17 +26,17 @@
 (defn view-index
   "首页，文章列表"
   [req]
-  (let [table-name (str ((config/account-dict (:server-name req)) :table-prefix) "posts")
+  (let [table-name (to/h2t (:server-name req))
         l (jdbc/query
             config/mysql-db
-            (sql/select [:date :title :id] table-name (sql/order-by [:date])))]
-    (render-page "index" {:list l})))
+            (sql/select [:date :title :id] table-name (sql/order-by {:date :desc})))]
+    (render-page "index" {:list l :tags (take 30 (config/sort-tags table-name))})))
 
 (defn view-article
   "文章页"
   [req]
   ; (render-page "post" (first l))
-  (let [table-name (str ((config/account-dict (:server-name req)) :table-prefix) "posts")
+  (let [table-name (to/h2t (:server-name req))
         id (:id (:params req))
         gettype (:type (:params req))
         l (jdbc/query
@@ -52,3 +53,11 @@
           (response (str "404")))
       (render-page "post" {:markdown "404"}))))
 
+(defn view-test 
+  "test"
+  [req]
+  (str config/sort-tags)
+  #_(let [t
+        (reduce #(merge-with concat %1 %2) (for [row (jdbc/query config/mysql-db (sql/select [:title :id :tags] "blogkurrunkcom_posts" ["tags is not NULL"]))]
+          (reduce #(assoc %1 (first %2) [(nth %2 1)]) {} (for [tag (clojure.string/split (:tags row) #",")] [tag (select-keys row [:title :id])]))))]
+    (pr-str t)))
