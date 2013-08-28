@@ -8,6 +8,7 @@
 						[soube.install :as install]
 						[soube.admin :as admin]
 						[soube.page :as page]
+						[soube.rss :as rss]
 						[soube.config :as config]))
 
 
@@ -22,6 +23,7 @@
 
 (defroutes app-routes
   (GET "/" [] page/view-index)
+  (GET "/feed" [] rss/view-rss)
   (GET "/admin" [] admin/view-index)
   (GET "/admin/dashboard" [] admin/view-index)
   (GET "/admin/sync.json" [] admin/markdown-sync)

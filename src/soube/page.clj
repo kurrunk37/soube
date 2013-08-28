@@ -28,7 +28,7 @@
   "首页，文章列表"
   [req]
   (let [table-name (to/h2t (:server-name req))
-        p (Integer/parseInt (get (:params req) :p 1))
+        p (Integer/parseInt (get (:params req) :p "1"))
         limit 5
         l (jdbc/query
             config/mysql-db
