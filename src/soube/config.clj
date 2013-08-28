@@ -28,7 +28,6 @@
                                   (sql/select
                                     [:title :id :tags]
                                     table-name
-                                    "blogkurrunkcom_posts"
                                     ["tags is not NULL"]))]
                         (reduce
                           #(assoc %1 (first %2) [(nth %2 1)])

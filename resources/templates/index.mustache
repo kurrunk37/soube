@@ -1,6 +1,11 @@
 {{> header}}
 		{{#list}}
-	  	<div>{{date}} <br><a href="/post/{{id}}.html">{{title}}</a></div>
+		<section>
+		<h2><a href="/post/{{id}}.html">{{title}}</a></h2>
+	  {{date}}
+		<div>{{{html}}}</div>
 		{{/list}}
+		{{#prev}}<a class="pure-button" href="?p={{prev}}">prev</a>{{/prev}}
+		{{#next}}<a class="pure-button" href="?p={{next}}">next</a>{{/next}}
 		{{^list}}没有文章{{/list}}
 {{> footer}}

@@ -8,7 +8,8 @@
 						;[cheshire.core :as cheshire]
             [clj-time [format :as timef] [coerce :as timec]]
 						[soube.config :as config]
-						[soube.to :as to]))
+						[soube.to :as to])
+  (:import [java.net URLEncoder]))
 
 (defn render-page
     [template data]
@@ -27,10 +28,18 @@
   "首页，文章列表"
   [req]
   (let [table-name (to/h2t (:server-name req))
+        p (Integer/parseInt (get (:params req) :p 1))
+        limit 5
         l (jdbc/query
             config/mysql-db
-            (sql/select [:date :title :id] table-name (sql/order-by {:date :desc})))]
-    (render-page "index" {:list l :tags (take 30 (config/sort-tags table-name))})))
+            (sql/select [:date :title :id :html] table-name (sql/order-by {:date :desc}) (str "limit " (* limit (dec p)) "," limit)))]
+    (render-page "index" {:list l
+                          :p p
+                          :next (if (= limit (count l)) (inc p) false) 
+                          :prev (if (= p 1) false (dec p))
+                          :tags (map
+                                          #(into {} {:url (URLEncoder/encode %) :tag %})
+                                          (take 30 (config/sort-tags table-name)))})))
 
 (defn view-article
   "文章页"

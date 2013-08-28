@@ -7,6 +7,7 @@
 ;								 [jopbox "0.1.0-SNAPSHOT"]
                  [org.clojure/java.jdbc "0.3.0-alpha4"]
                  [mysql/mysql-connector-java "5.1.25"]
+;                 [korma "0.3.0-RC5"]
                  [clj-oauth "1.4.0"]
                  [cheshire "5.2.0"]
 ;                 [markdown-clj "0.9.28"]

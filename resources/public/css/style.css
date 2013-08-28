@@ -8,5 +8,5 @@ footer {
 	padding: 1em;
 	font-size: 80%;
 }
-header{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+header{overflow:hidden;height:35px;}
 header.pure-menu li a{padding-left:4px; padding-right:4px;}

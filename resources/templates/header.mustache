@@ -9,12 +9,11 @@
 </head>
 <body>
 <header class="pure-menu pure-menu-open pure-menu-fixed pure-menu-horizontal">
-	<a href="/" class="pure-menu-heading">SOUBE</a>
 
 	<ul>
-		<li class="pure-menu-selected"><a href="#">示例</a></li>
+		<li class="pure-menu-selected"><a href="/" title="首页">SOUBE</a></li>
 		{{#tags}}
-		<li><a href="/tag/{{{.}}}">{{.}}</a></li>
+		<li><a href="/tag/{{url}}">{{tag}}</a></li>
 		{{/tags}}
 	</ul>
 </header>
