@@ -12,17 +12,21 @@
   (:import [java.net URLEncoder]))
 
 (defn render-page
-    [template data]
+    [hostname template data]
     (clostache/render-resource
-      (str "templates/" template ".mustache")
+      (str hostname "/templates/" template ".mustache")
       data
       (reduce
         (fn [accum pt]
           (assoc accum pt (slurp
                             (clojure.java.io/resource
-                                    (str "templates/" (name pt) ".mustache")))))
+                                    (str hostname "/templates/" (name pt) ".mustache")))))
         {}
         [:header :footer])))
+
+(defn get-site-name
+  [req]
+  ((config/site-map (:server-name req)) :name))
 
 (defn view-index
   "首页，文章列表"
@@ -33,7 +37,10 @@
         l (jdbc/query
             config/mysql-db
             (sql/select [:date :title :id :html] table-name (sql/order-by {:date :desc}) (str "limit " (* limit (dec p)) "," limit)))]
-    (render-page "index" {:list l
+    (render-page (:server-name req)
+                 "index" {:site-name (get-site-name req)
+                          :page-title (get-site-name req)
+                          :list l
                           :p p
                           :next (if (= limit (count l)) (inc p) false) 
                           :prev (if (= p 1) false (dec p))
@@ -50,17 +57,30 @@
         gettype (:type (:params req))
         l (jdbc/query
             config/mysql-db
-            (sql/select [:markdown :html :title] table-name (sql/where {:id id})))
-        thepost (first l)]
+            (sql/select [:markdown :html :title :date] table-name (sql/where {:id id})))
+        comment-map ((config/site-map (:server-name req)) :comment)
+        thepost (first l)
+        ]
     (if thepost
       (cond
         (= gettype "html")
-          (render-page "post" {:markdown (:html thepost) :page-title (:title thepost)})
+          (let [plugin (try
+                         (clostache/render-resource
+                           (str "templates/plugins/" (:server comment-map) ".mustache") comment-map)
+                         (catch  Exception e (str "caught exception: " (.getMessage e))))]
+            (render-page
+            (:server-name req)
+            "post"
+            {:markdown (:html thepost)
+             :site-name (get-site-name req)
+             :post-date (:date thepost)
+             :plugins plugin
+             :page-title (:title thepost)}))
         (= gettype "md")
           (:markdown thepost)
         :else
           (response (str "404")))
-      (render-page "post" {:markdown "404"}))))
+      (render-page (:server-name req) "post" {:markdown "404"}))))
 
 (defn view-test 
   "test"

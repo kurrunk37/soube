@@ -1,6 +1,6 @@
 (ns soube.handler
   (:use [compojure.core]
-				;[ring.util.response :only [redirect response]]
+				[ring.util.response :only [redirect]]
 				[ring.middleware session params keyword-params])
   (:require [compojure.handler :as handler]
             [compojure.route :as route]
@@ -12,14 +12,21 @@
 						[soube.config :as config]))
 
 
-;; Authentication handler
-;; 验证的逻辑
 (defn wrap-auth
+  "验证的逻辑"
 	[handler]
 	(fn [req]
 		(if (and (.startsWith (:uri req) "/admin") (not (admin/authenticated req)))
           (admin/authenticate req)
           (handler req))))
+
+(defn wrap-hostname
+  "判断域名是否有效"
+	[handler]
+	(fn [req]
+    (if (contains? config/site-map (:server-name req))
+      (handler req)
+      (redirect (str "http://" (key (first config/site-map)) ":" (:server-port req))))))
 
 (defroutes app-routes
   (GET "/" [] page/view-index)
@@ -41,6 +48,7 @@
 
 (def app
 	(-> app-routes
+    wrap-hostname
 		wrap-auth
 		wrap-session
 		wrap-keyword-params

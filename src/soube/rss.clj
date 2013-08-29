@@ -1,6 +1,4 @@
 (ns soube.rss
-  (:use [ring.util.response :only [redirect response]]
-				[ring.middleware session params keyword-params])
   (:require [clojure.java.jdbc :as jdbc]
             [clojure.java.jdbc.sql :as sql]
             [clojure.xml]
@@ -16,7 +14,7 @@
 (defmacro tag [id attrs & content]
     `{:tag ~id :attrs ~attrs :content [~@content]})
 
-(defn item [site author {:keys [id title content time]}]
+(defn item [site {:keys [id title content time author]}]
     (let [link (str site "/post/" id ".html")]
           (tag :item nil
                         (tag :guid nil link)
@@ -27,39 +25,42 @@
                         (tag :pubDate nil (format-time time))
                         (tag :category nil "clojure"))))
 
-(defn message [site title author posts]
-    (let [date (format-time (timel/local-now))]
-      (tag :rss {:version "2.0"
-                 :xmlns:dc "http://purl.org/dc/elements/1.1/"
-                 :xmlns:sy "http://purl.org/rss/1.0/modules/syndication/"}
-           (update-in
+(defn message [site title description author lastdate posts]
+  (tag :rss {:version "2.0"
+             :xmlns:dc "http://purl.org/dc/elements/1.1/"
+             :xmlns:sy "http://purl.org/rss/1.0/modules/syndication/"}
+       (update-in
              (tag :channel nil
-                  (tag :title nil "sitename")
-                  (tag :description nil title)
+                  (tag :title nil title)
+                  (tag :description nil description)
                   (tag :link nil site)
-                  (tag :lastBuildDate nil date)
+                  (tag :lastBuildDate nil (format-time lastdate))
                   (tag :dc:creator nil author)
-                  (tag :language nil "en-US")
+                  (tag :language nil "zh-CN")
                   (tag :sy:updatePeriod nil "hourly")
                   (tag :sy:updateFrequency nil "1"))
              [:content]
-             into (map (partial item site author) posts)))))
+             into (map (partial item site) posts))))
 
 
 (defn view-rss
   "rss"
   [req]
   (let [table-name (to/h2t (:server-name req))
+        app (config/site-map (:server-name req))
         rows (jdbc/query
                config/mysql-db
-               (sql/select [:date :title :id :html] table-name (sql/order-by {:date :desc}) "limit 10"))]
-    (with-out-str (clojure.xml/emit (message
-                          "http://blog.kurrunk.com"
-                          "kurrunk"
-                          "nil"
-                          (map
-                            #(merge
-                                 (select-keys % [:title :id])
-                                 {:time (timec/from-sql-date (:date %)) :content (:html %)})
-                            rows))))))
+               (sql/select [:date :title :id :html :account] table-name (sql/order-by {:date :desc}) "limit 10"))]
+    (with-out-str (clojure.xml/emit
+                    (message
+                      (str "http://" (:server-name req))
+                      (:name app "")
+                      (:description app "")
+                      (:author app "")
+                      (timec/from-sql-date (:date (first rows)))
+                      (map
+                        #(merge
+                           (select-keys % [:title :id])
+                           {:time (timec/from-sql-date (:date %)) :content (:html %) :author (:account %)})
+                        rows))))))
 
