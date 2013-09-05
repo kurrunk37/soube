@@ -14,7 +14,7 @@
                :user (System/getenv "DB_USER")
                :password (System/getenv "DB_PASSWORD")})
 
-(def site-map
+#_(def site-map
   "配置中的站点"
   (read-string (slurp (clojure.java.io/resource "apps.clj"))))
 
@@ -50,3 +50,14 @@
                                 (sort
                                   #(compare (count (last %2)) (count (last %1)))
                                   (last table))))})))
+
+(def sites
+  "站点配置"
+  {"blog.kurrunk.com" {
+                       :name "kurrunk"
+                       :description "不停转圈的人"
+                       :comment {:server "disqus" :id "kurrunk"}}
+   "default" {
+              :name "soube"
+              :desciption "一个简单易用的博客引擎"}})
+

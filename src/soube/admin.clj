@@ -89,6 +89,8 @@
                 :html (md-to-html-string md-string)})]
     (println (:title metadata))
     (cond
+      (= (:published metadata) "False")
+        (println "this is Undisclosed")
       (= action :insert)
         (jdbc/insert!  config/mysql-db table-name todb)
       (= action :update)
@@ -112,23 +114,25 @@
                                 (= (:mime_type %) "application/octet-stream")
                                 (= (:is_dir %) false))
                              (:contents dir-matadata)))
-        db-map (get-db-dict "dropbox" (:uid (:access-token (:session req))) (:server-name req))]
-    (doseq [md md-list]
-      (let [db-md (db-map (:path md))]
-        (if (not (and db-md (= (:revision db-md) (:revision md))))
-          (let [file-content (dropbox/get-file
-                               config/consumer
-                               access-token
-                               "sandbox" ;(:root md)
-                               (:path md))]
-            (cond
-              (not db-md)
-                (update-db :insert (:server-name req) (:uid access-token) md file-content)
-              (not (= (:revision db-md) (:revision md)))
-                (update-db :update (:server-name req) (:uid access-token) md file-content))))))
-    (if (empty? md-list)
-      "list is empty"
-      (cheshire/generate-string md-list))))
+        db-map (get-db-dict "dropbox" (:uid (:access-token (:session req))) (:server-name req))
+        update-md-list (filter (fn [md] (let [db-md (db-map (:path md))]
+                                          (not (and db-md (= (:revision db-md) (:revision md))))))
+                               md-list)]
+    (doseq [md update-md-list]
+      (let [file-content (dropbox/get-file
+                           config/consumer
+                           access-token
+                           "sandbox" ;(:root md)
+                           (:path md))
+            db-md (db-map (:path md))]
+        (cond
+          (not db-md)
+            (update-db :insert (:server-name req) (:uid access-token) md file-content)
+          (not (= (:revision db-md) (:revision md)))
+            (update-db :update (:server-name req) (:uid access-token) md file-content))))
+    (if (empty? update-md-list)
+      "[{'path':'list is empty'}]"
+      (cheshire/generate-string update-md-list))))
 
 ; 初始化table
 (defn init-table [req]

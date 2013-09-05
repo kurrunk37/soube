@@ -8,14 +8,15 @@ $('#sync-button').click(function(){
 		return;
 	}
 	$(this).find('i[class]').addClass('icon-spin');
+  $('#ret-string').hide();
 	$.ajax({
 		url: "/admin/sync.json",
 		dataType: 'json',
 		success: function(data){
-			var html="<table><thead><tr><th>title</th><th>date</th><th>path</th></tr></thead><tbody>";
-			for(var row in data){
-				html+="<tr><td>"+row['title']+"</td><td>"+row['date']+"</td><td>"+row['path']+'</td></tr>';
-			}
+			var html="<table class=\"pure-table pure-table-bordered\"><thead><tr><th>path</th><th>date</th></tr></thead><tbody>";
+			$.each(data, function(i,row){
+				html+="<tr><td>"+row.path+"</td><td>"+row.modified+"</td></tr>";
+			});
 			html+='</tbody></table>';
         $('#ret-string').html(html);
         $('#ret-string').show();

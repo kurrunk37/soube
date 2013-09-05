@@ -24,9 +24,12 @@
         {}
         [:header :footer])))
 
-(defn get-site-name
+(defn get-site
   [req]
-  ((config/site-map (:server-name req)) :name))
+  (config/sites
+    (if (contains? config/sites (:server-name req))
+      (:server-name req)
+      "default")))
 
 (defn view-index
   "首页，文章列表"
@@ -38,8 +41,8 @@
             config/mysql-db
             (sql/select [:date :title :id :html] table-name (sql/order-by {:date :desc}) (str "limit " (* limit (dec p)) "," limit)))]
     (render-page (:server-name req)
-                 "index" {:site-name (get-site-name req)
-                          :page-title (get-site-name req)
+                 "index" {:site-name (:name (get-site req))
+                          :page-title (:name (get-site req))
                           :list l
                           :p p
                           :next (if (= limit (count l)) (inc p) false) 
@@ -57,23 +60,24 @@
         gettype (:type (:params req))
         l (jdbc/query
             config/mysql-db
-            (sql/select [:markdown :html :title :date] table-name (sql/where {:id id})))
-        comment-map ((config/site-map (:server-name req)) :comment)
+            (sql/select [:markdown :html :title :date :tags] table-name (sql/where {:id id})))
+        comment-map (:comment (get-site req))
         thepost (first l)
         ]
     (if thepost
       (cond
         (= gettype "html")
-          (let [plugin (try
-                         (clostache/render-resource
-                           (str "templates/plugins/" (:server comment-map) ".mustache") comment-map)
-                         (catch  Exception e (str "caught exception: " (.getMessage e))))]
+          (let [plugin (if comment-map (try
+                                         (clostache/render-resource
+                                           (str "templates/plugins/" (:server comment-map) ".mustache") comment-map)
+                                         (catch  Exception e (str "caught exception: " (.getMessage e)))))]
             (render-page
             (:server-name req)
             "post"
             {:markdown (:html thepost)
-             :site-name (get-site-name req)
+             :site-name (:name (get-site req))
              :post-date (:date thepost)
+             :tags (map #(into {}  {:url (URLEncoder/encode %) :tag %}) (clojure.string/split (:tags thepost) #","))
              :plugins plugin
              :page-title (:title thepost)}))
         (= gettype "md")
@@ -81,6 +85,20 @@
         :else
           (response (str "404")))
       (render-page (:server-name req) "post" {:markdown "404"}))))
+
+(defn view-tag
+  "tag聚合页"
+  [req]
+  (let [tag (:tag (:params req))
+        table-name (to/h2t (:server-name req))
+        tag-posts ((config/tag-map table-name) tag)]
+    (render-page (:server-name req)
+                 "tag" {:site-name (:name (get-site req))
+                        :page-title (:name (get-site req))
+                        :list tag-posts
+                        :tags (map
+                                #(into {} {:url (URLEncoder/encode %) :tag %})
+                                (take 30 (config/sort-tags table-name)))})))
 
 (defn view-test 
   "test"

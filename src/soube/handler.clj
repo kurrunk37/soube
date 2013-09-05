@@ -24,13 +24,14 @@
   "判断域名是否有效"
 	[handler]
 	(fn [req]
-    (if (contains? config/site-map (:server-name req))
+    (if (contains? config/sites (:server-name req))
       (handler req)
-      (redirect (str "http://" (key (first config/site-map)) ":" (:server-port req))))))
+      (redirect (str "http://" (key (first config/sites)) ":" (:server-port req))))))
 
 (defroutes app-routes
   (GET "/" [] page/view-index)
   (GET "/feed" [] rss/view-rss)
+  (GET ["/tag/:tag", :tag #"[^/?&]+"] [] page/view-tag)
   (GET "/admin" [] admin/view-index)
   (GET "/admin/dashboard" [] admin/view-index)
   (GET "/admin/sync.json" [] admin/markdown-sync)

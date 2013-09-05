@@ -47,7 +47,7 @@
   "rss"
   [req]
   (let [table-name (to/h2t (:server-name req))
-        app (config/site-map (:server-name req))
+        app (config/sites (:server-name req))
         rows (jdbc/query
                config/mysql-db
                (sql/select [:date :title :id :html :account] table-name (sql/order-by {:date :desc}) "limit 10"))]

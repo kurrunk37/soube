@@ -1,0 +1,8 @@
+{{> header}}
+	<ul>
+		{{#list}}
+		<li><a href="/post/{{id}}.html">{{title}}</a></li>
+		{{/list}}
+		</ul>
+		{{^list}}没有文章{{/list}}
+{{> footer}}
