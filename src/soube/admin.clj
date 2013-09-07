@@ -131,7 +131,7 @@
           (not (= (:revision db-md) (:revision md)))
             (update-db :update (:server-name req) (:uid access-token) md file-content))))
     (if (empty? update-md-list)
-      "[{'path':'list is empty'}]"
+      "{\"msg\":\"没有更新\"}"
       (cheshire/generate-string update-md-list))))
 
 ; 初始化table
@@ -176,12 +176,12 @@
       error
         (response (str "Authentication error " error))
       (and oauth-token uid)
-        (-> (redirect url)
-            (assoc
-              :session
-              (assoc
-                session
-                :access-token (dropbox/fetch-access-token-response config/consumer (:request-token session)))))
+        (if (contains? (:dropbox (config/sites hostname)) uid)
+          (-> (redirect url)
+            (assoc :session
+                   (assoc session
+                          :access-token (dropbox/fetch-access-token-response config/consumer (:request-token session)))))
+          (redirect "/403.html"))
       :else
 				(let [request-token (dropbox/fetch-request-token config/consumer)
               dropboxurl (dropbox/authorization-url config/consumer request-token)]

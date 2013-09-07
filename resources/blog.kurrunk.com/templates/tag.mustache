@@ -5,4 +5,15 @@
 		{{/list}}
 		</ul>
 		{{^list}}没有文章{{/list}}
+<script type="text/javascript">
+var url=location.href;
+var head_a_list=document.getElementsByTagName('header')[0].getElementsByTagName('a');
+//var head_a_list=document.querySelector("header li>a");
+for(var i=0;i<head_a_list.length;i++){
+	if(head_a_list[i].href==url){
+		head_a_list[i].parentNode.className="pure-menu-selected";
+		break;
+	}
+}
+</script>
 {{> footer}}

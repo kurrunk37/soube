@@ -16,7 +16,8 @@
   "验证的逻辑"
 	[handler]
 	(fn [req]
-		(if (and (.startsWith (:uri req) "/admin") (not (admin/authenticated req)))
+		(if (and (.startsWith (:uri req) "/admin")
+             (not (admin/authenticated req)))
           (admin/authenticate req)
           (handler req))))
 

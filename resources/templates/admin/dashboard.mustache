@@ -1,6 +1,7 @@
 {{> header}}
-<div id="ret-string" style="display:none"></div>
-<button class="pure-button" id="sync-button"><i class="icon-refresh"></i> 同步</button>
+<div><button class="pure-button" id="sync-button"><i class="icon-refresh"></i> 同步</button></div>
+<br>
+<div id="ret-string" style="min-height:100px">同步dropbox帐户中相应目录，目录是/应用/soube/{hostname}/posts/</div>
 <script type="text/javascript">
 $('#sync-button').click(function(){
 	if($(this).find('i:first').hasClass('icon-spin')){
@@ -13,14 +14,19 @@ $('#sync-button').click(function(){
 		url: "/admin/sync.json",
 		dataType: 'json',
 		success: function(data){
-			var html="<table class=\"pure-table pure-table-bordered\"><thead><tr><th>path</th><th>date</th></tr></thead><tbody>";
-			$.each(data, function(i,row){
-				html+="<tr><td>"+row.path+"</td><td>"+row.modified+"</td></tr>";
-			});
-			html+='</tbody></table>';
-        $('#ret-string').html(html);
-        $('#ret-string').show();
-				$('#sync-button>i').removeClass('icon-spin');
+			var html="";
+			if(data["msg"]){
+        html=data["msg"];
+			}else{
+				html="<table class=\"pure-table pure-table-bordered\"><thead><tr><th>path</th><th>date</th></tr></thead><tbody>";
+				$.each(data, function(i,row){
+					html+="<tr><td>"+row.path+"</td><td>"+row.modified+"</td></tr>";
+				});
+				html+='</tbody></table>';
+			}
+      $('#ret-string').html(html);
+      $('#ret-string').show();
+			$('#sync-button>i').removeClass('icon-spin');
 		},
 		error: function(data){
         alert("出错了");
