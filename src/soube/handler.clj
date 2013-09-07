@@ -9,7 +9,8 @@
 						[soube.admin :as admin]
 						[soube.page :as page]
 						[soube.rss :as rss]
-						[soube.config :as config]))
+						[soube.config :as config])
+  (:import [java.net URLEncoder]))
 
 
 (defn wrap-auth
@@ -42,6 +43,8 @@
   (GET "/test" [] page/view-test)
 ;  (GET "/test_https" [] (test-https))
   (GET ["/post/:id.:type", :id  #"[0-9]+", :type #"(html|md)"] [] page/view-article)
+  (GET ["/archives/:id", :id  #"[0-9]+"] [id] (#(merge (redirect (str "/post/" % ".html")) {:status 301}) id))
+  (GET ["/archives/tag/:tag", :tag  #"[^/?&]+"] [tag] (#(merge (redirect (str "/tag/" (URLEncoder/encode %))) {:status 301}) tag))
   (route/resources "/")
   (route/not-found "Not Found"))
 

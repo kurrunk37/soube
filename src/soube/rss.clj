@@ -5,8 +5,7 @@
 						;[cheshire.core :as cheshire]
             [clj-time [format :as timef] [local :as timel] [coerce :as timec]]
 						[soube.config :as config]
-						[soube.to :as to])
-  (:import [java.net URLEncoder]))
+						[soube.to :as to]))
 
 (defn format-time [time]
   (timef/unparse (timef/with-locale (timef/formatters :rfc822) java.util.Locale/ENGLISH) time))

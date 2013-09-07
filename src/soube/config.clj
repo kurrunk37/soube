@@ -14,10 +14,6 @@
                :user (System/getenv "DB_USER")
                :password (System/getenv "DB_PASSWORD")})
 
-#_(def site-map
-  "配置中的站点"
-  (read-string (slurp (clojure.java.io/resource "apps.clj"))))
-
 (def tag-map
   "文章的tags"
   (let [rows (jdbc/query mysql-db ["show tables"])
