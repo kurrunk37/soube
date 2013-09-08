@@ -97,7 +97,7 @@
 (defn view-test 
   "test"
   [req]
-  (str config/sort-tags)
+  (str (System/getenv "VCAP_SERVICES"))
   #_(let [t
         (reduce #(merge-with concat %1 %2) (for [row (jdbc/query config/mysql-db (sql/select [:title :id :tags] "blogkurrunkcom_posts" ["tags is not NULL"]))]
           (reduce #(assoc %1 (first %2) [(nth %2 1)]) {} (for [tag (clojure.string/split (:tags row) #",")] [tag (select-keys row [:title :id])]))))]

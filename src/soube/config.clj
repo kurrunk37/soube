@@ -1,18 +1,37 @@
 (ns soube.config
 	(:require [soube.jopbox :as dropbox]
             [clojure.java.jdbc :as jdbc]
+						[cheshire.core :as cheshire]
             [clojure.java.jdbc.sql :as sql]))
 
 ;dropbox
 (def consumer (dropbox/make-consumer
-                (System/getenv "DROPBOX_KEY")
-                (System/getenv "DROPBOX_SECRET")))
+                (or (System/getProperty "dropbox.key")
+                    (System/getenv "DROPBOX_KEY"))
+                (or (System/getProperty "dropbox.secret")
+                    (System/getenv "DROPBOX_SECRET"))))
+
+(defn get-cf-dbsec
+  "取得Cloud Foundry数据库信息"
+  []
+  (let [vs (System/getenv "VCAP_SERVICES")
+        vc ((first ((cheshire/parse-string vs) "mysql-5.1")) "credentials")]
+    {:subprotocol "mysql"
+     :subname (str "//" (vc "host") ":" (vc "port") "/" (vc "name"))
+     :user (vc "user")
+     :password (vc "password")}))
 
 ;db连接
-(def mysql-db {:subprotocol "mysql"
-               :subname (System/getenv "DB_SUBNAME")
-               :user (System/getenv "DB_USER")
-               :password (System/getenv "DB_PASSWORD")})
+(def mysql-db (if (System/getenv "VCAP_SERVICES")
+                (get-cf-dbsec)
+                {:subprotocol "mysql"
+               :subname (or (System/getProperty "db.subname")
+                            (System/getenv "DB_SUBNAME"))
+               :user (or (System/getProperty "db.user")
+                         (System/getenv "DB_USER"))
+               :password (or (System/getProperty "db.password")
+                             (System/getenv "DB_PASSWORD"))}))
+;getenv 
 
 (def tag-map
   "文章的tags"
@@ -49,11 +68,15 @@
 
 (def sites
   "站点配置"
-  {"default" {
-              :name "soube"
+  {"default" {:name "soube"
               :desciption "一个简单易用的博客引擎"}
-  "blog.kurrunk.com" {
-                      :name "kurrunk"
-                      :description "不停转圈的人"
-                      :dropbox #{"77401815"}}})
+   "blog.kurrunk.com" {:name "kurrunk"
+                       :description "不停转圈的人"
+                       :dropbox #{"77401815"}}
+   "jiandao.ap01.aws.af.cm" {:name "kurrunk"
+                             :description "不停转圈的人"
+                             :dropbox #{"77401815"}}
+   "soube.jelastic.servint.net" {:name "kurrunk"
+                                 :description "不停转圈的人"
+                                 :dropbox #{"77401815"}}})
 

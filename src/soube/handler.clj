@@ -5,7 +5,6 @@
   (:require [compojure.handler :as handler]
             [compojure.route :as route]
 ;            [clj-http.client :as client]
-						[soube.install :as install]
 						[soube.admin :as admin]
 						[soube.page :as page]
 						[soube.rss :as rss]
@@ -40,7 +39,7 @@
   (GET "/admin/info" [] admin/account-info)
   (GET "/admin/install" [] admin/init-table)
   (GET "/admin/tools" [] admin/view-tools)
-  (GET "/test" [] page/view-test)
+  #_(GET "/test" [] page/view-test)
 ;  (GET "/test_https" [] (test-https))
   (GET ["/post/:id.:type", :id  #"[0-9]+", :type #"(html|md)"] [] page/view-article)
   (GET ["/archives/:id", :id  #"[0-9]+"] [id] (#(merge (redirect (str "/post/" % ".html")) {:status 301}) id))
