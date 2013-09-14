@@ -4,8 +4,7 @@
             [clojure.xml]
 						;[cheshire.core :as cheshire]
             [clj-time [format :as timef] [local :as timel] [coerce :as timec]]
-						[soube.config :as config]
-						[soube.to :as to]))
+						[soube.config :as config]))
 
 (defn format-time [time]
   (timef/unparse (timef/with-locale (timef/formatters :rfc822) java.util.Locale/ENGLISH) time))
@@ -45,7 +44,7 @@
 (defn view-rss
   "rss"
   [req]
-  (let [table-name (to/h2t (:server-name req))
+  (let [table-name (config/get-tablename (:server-name req))
         app (config/sites (:server-name req))
         rows (jdbc/query
                config/mysql-db

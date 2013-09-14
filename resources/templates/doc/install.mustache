@@ -1,0 +1,87 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+	<title>安装 | soube</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	</head>
+<body>
+
+<h1>安装</h1>
+
+<h2>使用条件</h2>
+<ol>
+<li>一个标准的java web环境，jetty/tomcat等</li>
+<li>mysql数据库</li>
+<li>dropbox帐号</li>
+</ol>
+
+
+<h2>安装步骤</h2>
+
+<ol>
+<li>部署war文件到环境中</li>
+<li>设置环境变量 (参见下方)</li>
+<li>启动jetty/tomcat后，通过浏览器访问http://yourhostname/admin(会要求登录dropbox);</li>
+<li>点击"工具-&gt;初始化数据库"按钮，这个会在您的db中建一个table;</li>
+<li>点击同步按钮，这样会把dropbox的*.md文件同步到db中，站点部署就完成了</li>
+</ol>
+
+
+<h2>配置方法</h2>
+
+<p>可以通过设置<b>系统环境变量</b>或<b>JVM环境变量</b>两种方式来配置您的站点</p>
+<table border=1>
+	<thead>
+		<tr><th>系统环境变量</th><th>JVM环境变量</th><th>说明</th></tr>
+	</thead>
+	<tbody>
+	<tr><td>DB_SUBNAME</td><td>db.subname</td><td>db连接，如:<code>//127.0.0.1:3306/soube</code></td></tr>
+	<tr><td>DB_USER</td><td>db.user</td><td>db用户名</td></tr>
+	<tr><td>DB_PASSWORD</td><td>db.password</td><td>db密码</td></tr>
+	<tr><td>DROPBOX_KEY</td><td>dropbox.key</td><td>dropbox key</td></tr>
+	<tr><td>DROPBOX_SECRET</td><td>dropbox.secret</td><td>dropbox.secret</td></tr>
+	<tr><td>DROPBOX_UID</td><td>dropbox.uid</td><td>dropbox帐号白名单，用","分隔多个uid</td></tr>
+	<tr><td>SITE_NAME</td><td>site.name</td><td>blog主题，将会显示在网页的title上</td></tr>
+	<tr><td>SITE_DESCIPTION</td><td>site.desciption</td><td>blog简介</td></tr>
+	</tbody>
+</table>
+
+<h3>常见paas平台的配置方法</h3>
+
+<h4>jelastic</h4>
+<ol>
+	<li>创建environment,选择jetty,数据库用mariadb</li>
+	<li>上传war文件</li>
+	<li>jetty-&gt;config:<br>打开server/variables.conf，内容如下格式:<br>
+	<pre>
+-Ddropbox.key=***
+-Ddropbox.secret=***
+-Ddropbox.uid=*** #dropbox的uid,这里是同步文章用的
+
+#你的数据库
+-Ddb.subname=//mariadb-*.jelastic.servint.net/*?characterEncoding=UTF-8
+-Ddb.user=***
+-Ddb.password=***
+
+#你的站点信息
+-Dsite.name=myblog
+-Dsite.desciption=这是我的博客简介
+</pre></li>
+</ol>
+
+<h4>appfog</h4>
+<ol>
+	<li>创建app并绑定一个mysql数据库</li>
+	<li>上传war文件</li>
+	<li>配置环境变量(Env Variables):
+	<ul>
+		<li>DROPBOX_KEY</li>
+		<li>DROPBOX_SECRET</li>
+		<li>DROPBOX_UID</li>
+		<li>SITE_NAME</li>
+		<li>SITE_DESCIPTION</li>
+	</ul></li>
+</ol>
+
+</body></html>

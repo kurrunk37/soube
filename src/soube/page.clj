@@ -7,55 +7,66 @@
 						[soube.jopbox :as dropbox]
 						;[cheshire.core :as cheshire]
             [clj-time [format :as timef] [coerce :as timec]]
-						[soube.config :as config]
-						[soube.to :as to])
+						[soube.config :as config])
   (:import [java.net URLEncoder]))
 
+(defn get-siteid
+  "取得站点id"
+  [hostname]
+  (if (contains? config/sites hostname)
+      (:server-name req)
+      "default"))
+
+(defn get-site-conf
+  "取得站点配置"
+  [req]
+  (config/sites (get-siteid (:server-name req))))
+
 (defn render-page
-    [hostname template data]
+  "渲染页面"
+  [hostname template data]
+  (let [dir (get-siteid hostname)]
     (clostache/render-resource
-      (str hostname "/templates/" template ".mustache")
+      (str dir "/templates/" template ".mustache")
       data
       (reduce
         (fn [accum pt]
           (assoc accum pt (slurp
                             (clojure.java.io/resource
-                                    (str hostname "/templates/" (name pt) ".mustache")))))
+                                    (str dir "/templates/" (name pt) ".mustache")))))
         {}
-        [:header :footer])))
+        [:header :footer]))))
 
-(defn get-site
-  [req]
-  (config/sites
-    (if (contains? config/sites (:server-name req))
-      (:server-name req)
-      "default")))
 
 (defn view-index
   "首页，文章列表"
   [req]
-  (let [table-name (to/h2t (:server-name req))
+  (let [table-name (config/get-tablename (:server-name req))
         p (Integer/parseInt (get (:params req) :p "1"))
         limit 5
-        l (jdbc/query
-            config/mysql-db
-            (sql/select [:date :title :id :html] table-name (sql/order-by {:date :desc}) (str "limit " (* limit (dec p)) "," limit)))]
-    (render-page (:server-name req)
-                 "index" {:site-name (:name (get-site req))
-                          :page-title (:name (get-site req))
+        l (try
+            (jdbc/query
+              config/mysql-db
+              (sql/select [:date :title :id :html] table-name (sql/order-by {:date :desc}) (str "limit " (* limit (dec p)) "," limit)))
+            (catch Exception e nil))]
+    (if (not l)
+      (clostache/render-resource (str "templates/doc/install.mustache") {})
+      (render-page (:server-name req)
+                   "index" {:site-name (:name (get-site-conf req))
+                          :page-title (:name (get-site-conf req))
                           :list l
                           :p p
                           :next (if (= limit (count l)) (inc p) false) 
                           :prev (if (= p 1) false (dec p))
                           :tags (map
-                                          #(into {} {:url (URLEncoder/encode %) :tag %})
-                                          (take 30 (config/sort-tags table-name)))})))
+                                  #(into {} {:url (URLEncoder/encode %) :tag %})
+                                  (take 30 (config/sort-tags (:server-name req))))}))))
 
 (defn view-article
   "文章页"
   [req]
   ; (render-page "post" (first l))
-  (let [table-name (to/h2t (:server-name req))
+  (let [table-name (config/get-tablename (:server-name req))
         id (:id (:params req))
         gettype (:type (:params req))
         l (jdbc/query
@@ -70,7 +81,7 @@
             (:server-name req)
             "post"
             {:markdown (:html thepost)
-             :site-name (:name (get-site req))
+             :site-name (:name (get-site-conf req))
              :post-date (:date thepost)
              :tags (map #(into {}  {:url (URLEncoder/encode %) :tag %}) (clojure.string/split (:tags thepost) #","))
              :page-title (:title thepost)})
@@ -84,15 +95,16 @@
   "tag聚合页"
   [req]
   (let [tag (:tag (:params req))
-        table-name (to/h2t (:server-name req))
-        tag-posts ((config/tag-map table-name) tag)]
+        hostname (:server-name req)
+        table-name (config/get-tablename hostname)
+        tag-posts ((deref (config/tag-map hostname)) tag)]
     (render-page (:server-name req)
-                 "tag" {:site-name (:name (get-site req))
+                 "tag" {:site-name (:name (get-site-conf req))
                         :page-title tag
                         :list tag-posts
                         :tags (map
                                 #(into {} {:url (URLEncoder/encode %) :tag %})
-                                (take 30 (config/sort-tags table-name)))})))
+                                (take 30 (config/sort-tags hostname)))})))
 
 (defn view-test 
   "test"

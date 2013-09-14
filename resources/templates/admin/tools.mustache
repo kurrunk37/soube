@@ -3,7 +3,7 @@
 <div class="pure-menu pure-menu-open pure-menu-horizontal" id="tabs">
 <ul>
 <li class="pure-menu-selected"><a href="import">导入</a></li>
-<!--li><a href="tool2">tool2</a></li-->
+<li><a href="install">初始化数据库</a></li>
 </ul>
 </div>
 
@@ -12,6 +12,10 @@
 	<h2>wordpress</h2>
 	这个工具可以帮助你把wordpress的文章转为markdown格式。
 	<a href="https://github.com/huzhengquan/wp2markdown-soube">https://github.com/huzhengquan/wp2markdown-soube</a>
+	</div>
+	<div id="tool-install">
+	<button class="pure-button" id="install-btn">初始化数据库</button>
+		<div id="ret"></div>
 	</div>
 </div>
 
@@ -28,6 +32,18 @@ $('#tabs>ul>li>a[href]').click(function(){
 	return false;
 });
 toggle('import');
+
+$('#install-btn').click(function(){
+	$(this).text("初始化进行中...");
+	$.getJSON("/admin/install",function(data){
+		$('#install-btn').text('初始化数据库');
+		if("error" in data){
+			$('#ret').text(data.error);
+		}else if("msg" in data){
+			$('#ret').text(data.msg);
+		}
+	});
+});
 </script>
 
 {{> footer}}

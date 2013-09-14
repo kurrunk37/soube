@@ -39,7 +39,7 @@
   "从数据库中把元数据取出,返回以:path为key的map"
   [src uid hostname]
   (println (str src uid hostname))
-  (let [table-name (to/h2t hostname)
+  (let [table-name (config/get-tablename hostname)
         l (jdbc/query
             config/mysql-db
             (sql/select
@@ -68,7 +68,7 @@
   "新的md"
   [action hostname uid md file-content]
   (println action)
-  (let [table-name (to/h2t hostname)
+  (let [table-name (config/get-tablename hostname)
         {file-clj :md-clj  metadata :meta md-string :md-string} (parse-markdown file-content)
         ;title (or (:title metadata)
                   ;(clojure.string/join " " (:content (some #(if (= (:tag %) :h1) %) file-clj))))
@@ -92,13 +92,25 @@
       (= (:published metadata) "False")
         (println "this is Undisclosed")
       (= action :insert)
-        (jdbc/insert!  config/mysql-db table-name todb)
+        (try
+          (do 
+            (jdbc/insert! config/mysql-db table-name todb)
+            (if (:tags metadata)
+              (if-let [rows (jdbc/query config/mysql-db
+                                        (sql/select [:id :title :tags]
+                                                    table-name
+                                                    (sql/where {:src "dropbox" :account uid :path (:path md)})))]
+                (let [row (first rows)]
+                  (config/push-tag hostname (:id row) (:title row) (:tags row))))))
+          (catch Exception e (println "caught exception: " (.getMessage e))))
       (= action :update)
-        (jdbc/update!
-          config/mysql-db
-          table-name
-          (select-keys todb [:markdown :title :modified :date :revision :html])
-          (sql/where {:account uid :path (:path md)})))))
+        (try
+          (jdbc/update!
+            config/mysql-db
+            table-name
+            (select-keys todb [:markdown :title :modified :date :revision :html])
+            (sql/where {:account uid :path (:path md)}))
+          (catch Exception e (println (str "caught exception: " (.getMessage e))))))))
 
 ; 文件同步
 (defn markdown-sync [req]
@@ -134,26 +146,28 @@
       "{\"msg\":\"没有更新\"}"
       (cheshire/generate-string update-md-list))))
 
-; 初始化table
 (defn init-table [req]
-  (let [hostname (:server-name req)]
-    (jdbc/with-connection config/mysql-db
-      (jdbc/create-table
-        (str "if not exists " (to/h2t hostname))
-        [:id :integer "UNSIGNED" "PRIMARY KEY" "AUTO_INCREMENT"]
-        [:path "varchar(64)" "not null"]
-        [:revision :smallint "UNSIGNED" "not null" "default 0"]
-        [:date "datetime" "not null"]
-        [:modified "datetime" "not null"]
-        [:title "tinytext" "not null"]
-        [:src "enum('dropbox','write')" "not null" "default 'write'"]
-        [:account "tinytext"]
-        [:tags "tinytext"]
-        [:categories "varchar(64)"]
-        [:markdown "mediumtext"]
-        [:html "mediumtext"]
-        ))
-    "done"))
+  "初始化table"
+  (try
+    (do
+      (jdbc/with-connection config/mysql-db
+        (jdbc/create-table
+          (str "if not exists " (config/get-tablename (:server-name req)))
+          [:id :integer "UNSIGNED" "PRIMARY KEY" "AUTO_INCREMENT"]
+          [:path "varchar(64)" "not null"]
+          [:revision :smallint "UNSIGNED" "not null" "default 0"]
+          [:date "datetime" "not null"]
+          [:modified "datetime" "not null"]
+          [:title "tinytext" "not null"]
+          [:src "enum('dropbox','write')" "not null" "default 'write'"]
+          [:account "tinytext"]
+          [:tags "tinytext"]
+          [:categories "varchar(64)"]
+          [:markdown "mediumtext"]
+          [:html "mediumtext"]
+          ))
+      (str "{\"status\": 1, \"msg\": \"初始化完成\"}"))
+    (catch Exception e (str "{\"error\": \"caught exception: " (.getMessage e) "\"}"))))
 
 ; 身份判断
 (defn authenticated
@@ -176,7 +190,7 @@
       error
         (response (str "Authentication error " error))
       (and oauth-token uid)
-        (if (contains? (:dropbox (config/sites hostname)) uid)
+        (if (contains? config/allow-dropbox-set uid)
           (-> (redirect url)
             (assoc :session
                    (assoc session

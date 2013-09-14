@@ -21,13 +21,13 @@
           (admin/authenticate req)
           (handler req))))
 
-(defn wrap-hostname
+#_(defn wrap-hostname
   "判断域名是否有效"
 	[handler]
 	(fn [req]
     (if (contains? config/sites (:server-name req))
       (handler req)
-      (redirect (str "http://" (key (first config/sites)) ":" (:server-port req))))))
+      (redirect (str "http://localhost:" (:server-port req))))))
 
 (defroutes app-routes
   (GET "/" [] page/view-index)
@@ -52,7 +52,7 @@
 
 (def app
 	(-> app-routes
-    wrap-hostname
+    ;wrap-hostname
 		wrap-auth
 		wrap-session
 		wrap-keyword-params
