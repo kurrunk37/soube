@@ -14,8 +14,8 @@
   "取得站点id"
   [hostname]
   (if (contains? config/sites hostname)
-      (:server-name req)
-      "default"))
+    hostname
+    "default"))
 
 (defn get-site-conf
   "取得站点配置"
@@ -51,16 +51,18 @@
             (catch Exception e nil))]
     (if (not l)
       (clostache/render-resource (str "templates/doc/install.mustache") {})
-      (render-page (:server-name req)
-                   "index" {:site-name (:name (get-site-conf req))
-                          :page-title (:name (get-site-conf req))
-                          :list l
-                          :p p
-                          :next (if (= limit (count l)) (inc p) false) 
-                          :prev (if (= p 1) false (dec p))
-                          :tags (map
-                                  #(into {} {:url (URLEncoder/encode %) :tag %})
-                                  (take 30 (config/sort-tags (:server-name req))))}))))
+      (render-page
+        (:server-name req)
+        "index"
+        {:site-name (:name (get-site-conf req))
+         :site-desc (:description (get-site-conf req))
+         :page-title "首页"
+         :list l
+         :p p
+         :next (if (= limit (count l)) (inc p) false)
+         :prev (if (= p 1) false (dec p))
+         :tags (map #(into {} {:url (URLEncoder/encode %) :tag %})
+                    (take 30 ((deref config/sort-tags) (:server-name req))))}))))
 
 (defn view-article
   "文章页"
@@ -104,7 +106,7 @@
                         :list tag-posts
                         :tags (map
                                 #(into {} {:url (URLEncoder/encode %) :tag %})
-                                (take 30 (config/sort-tags hostname)))})))
+                                (take 30 ((deref config/sort-tags) hostname)))})))
 
 (defn view-test 
   "test"

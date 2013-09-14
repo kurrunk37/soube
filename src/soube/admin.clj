@@ -116,17 +116,18 @@
 (defn markdown-sync [req]
   "同步dropbox和数据库里的文章"
   (println (:session req))
-  (let [access-token (:access-token (:session req))
+  (let [hostname (:server-name req)
+        access-token (:access-token (:session req))
         dir-matadata (dropbox/metadata
                        config/consumer
                        access-token
                        "sandbox"
-                       (str (:server-name req) "/posts"))
+                       (str hostname "/posts"))
         md-list (seq (filter #(and
                                 (= (:mime_type %) "application/octet-stream")
                                 (= (:is_dir %) false))
                              (:contents dir-matadata)))
-        db-map (get-db-dict "dropbox" (:uid (:access-token (:session req))) (:server-name req))
+        db-map (get-db-dict "dropbox" (:uid (:access-token (:session req))) hostname)
         update-md-list (filter (fn [md] (let [db-md (db-map (:path md))]
                                           (not (and db-md (= (:revision db-md) (:revision md))))))
                                md-list)]
@@ -139,12 +140,13 @@
             db-md (db-map (:path md))]
         (cond
           (not db-md)
-            (update-db :insert (:server-name req) (:uid access-token) md file-content)
+            (update-db :insert hostname (:uid access-token) md file-content)
           (not (= (:revision db-md) (:revision md)))
-            (update-db :update (:server-name req) (:uid access-token) md file-content))))
+            (update-db :update hostname (:uid access-token) md file-content))))
     (if (empty? update-md-list)
       "{\"msg\":\"没有更新\"}"
-      (cheshire/generate-string update-md-list))))
+      (do (config/update-sort-tag hostname)
+        (cheshire/generate-string update-md-list)))))
 
 (defn init-table [req]
   "初始化table"

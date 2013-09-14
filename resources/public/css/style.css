@@ -11,3 +11,4 @@ footer {
 header{overflow:hidden;height:35px;}
 header.pure-menu li a{padding-left:4px; padding-right:4px;}
 pre{background-color:#ccc;padding:9px;border-radius:3px;}
+#desc{text-align:center}

@@ -74,27 +74,42 @@
   "新的文章"
   [site-name id title tags-str]
   (if (contains? tag-map site-name)
-    (doseq [tag (clojure.string/split tags-str #",")]
+    (doseq [tag (apply hash-set (clojure.string/split tags-str #","))]
       (if (not (= tag ""))
         (if (contains? (deref (tag-map site-name)) tag)
           (swap! (tag-map site-name) update-in [tag] conj {:id id :title title})
           (swap! (tag-map site-name) assoc tag [{:id id :title title}]))))))
 
-; 更新现有文章的tag
-(doseq [site-name (keys sites)]
-  (try
-    (doseq [row (jdbc/query mysql-db (sql/select [:title :id :tags] (get-tablename site-name) ["tags is not NULL"]))]
-      (push-tag site-name (:id row) (:title row) (:tags row)))
-    (catch Exception e (println "更新tag失败" site-name (.getMessage e)))))
-
 (def sort-tags
   "按文章数排序"
-  (apply
+  (atom (zipmap (keys sites) (for [site (keys sites)] []))))
+
+(defn update-sort-tag
+  "更新排序后的tag"
+  [site-name]
+  (if (contains? (deref sort-tags) site-name)
+    (swap! sort-tags assoc site-name
+           (take 50
+                 (keys
+                   (sort
+                     #(compare (count (last %2)) (count (last %1)))
+                     (deref (tag-map site-name))))))))
+
+; 更新现有文章的tag
+(doseq [site-name (keys tag-map)]
+  (try
+    (do
+      (doseq [row (jdbc/query mysql-db (sql/select [:title :id :tags] (get-tablename site-name) ["tags is not NULL"]))]
+        (push-tag site-name (:id row) (:title row) (:tags row)))
+      (update-sort-tag site-name))
+    (catch Exception e (println "更新tag失败" site-name (.getMessage e)))))
+
+#_(apply
     merge
     (for [[site-name site-tags] tag-map]
       {site-name (take 100
                        (for [tag (sort #(compare (count (last %2)) (count (last %1)))
                                          (deref site-tags))]
-                         (first tag)))})))
+                         (first tag)))}))
 
 
