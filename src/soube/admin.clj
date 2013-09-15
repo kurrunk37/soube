@@ -90,12 +90,14 @@
                 :date date,
                 :markdown file-content,
                 :modified modified,
-                :tags (clojure.string/join
-                        ","
-                        (filter
-                          #(not (= % ""))
-                          (map #(clojure.string/trim %)
-                               (clojure.string/split (:tags metadata) #","))))
+                :tags (if (:tags metadata)
+                        (clojure.string/join
+                          ","
+                          (filter
+                            #(not (= % ""))
+                            (map #(clojure.string/trim %)
+                                 (clojure.string/split (:tags metadata) #","))))
+                        nil)
                 :html (md-to-html-string md-string)})]
     (println (:title metadata))
     (cond
@@ -105,7 +107,7 @@
         (try
           (do 
             (jdbc/insert! config/mysql-db table-name todb)
-            (if (:tags metadata)
+            (if (contains? metadata :tags)
               (if-let [rows (jdbc/query config/mysql-db
                                         (sql/select [:id :title :tags]
                                                     table-name

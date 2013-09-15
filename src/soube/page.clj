@@ -50,7 +50,7 @@
          :p p
          :next (if (= limit (count l)) (inc p) false)
          :prev (if (= p 1) false (dec p))
-         :tags (map #(into {} {:url (URLEncoder/encode %) :tag %})
+         :tags (map #(into {} {:url (URLEncoder/encode % "utf-8") :tag %})
                     (take 30 ((deref config/sort-tags) (config/get-siteid (:server-name req)))))}))))
 
 (defn view-article
@@ -76,7 +76,7 @@
              :post-date (:date thepost)
              :tags (if
                      (:tags thepost)
-                     (map #(into {}  {:url (URLEncoder/encode %) :tag %})
+                     (map #(into {}  {:url (URLEncoder/encode % "utf-8") :tag %})
                           (filter #(not (= % ""))
                                   (map #(clojure.string/trim %)
                                        (clojure.string/split (:tags thepost) #",")))))
@@ -100,7 +100,7 @@
                   :page-title tag
                   :list tag-posts
                   :tags (map
-                          #(into {} {:url (URLEncoder/encode %) :tag %})
+                          #(into {} {:url (URLEncoder/encode % "utf-8") :tag %})
                           (take 30 ((deref config/sort-tags) (config/get-siteid hostname))))})))
 
 (defn view-test 
