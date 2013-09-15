@@ -2,6 +2,9 @@
 
 这是一个基于dropbox的个人博客引擎，可以轻松创建一个简洁的博客。
 
+* [下载war文件](http://pan.baidu.com/share/link?shareid=2880668734&uk=2366555814 "soube war")
+* 默认样式可以参照这个博客:[kurrunk](http://blog.kurrunk.com "kurrunk")
+
 ## 运行环境
 
 * 程序运行在java servlet环境，推荐使用tomcat、jetty。
