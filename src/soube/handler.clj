@@ -11,6 +11,8 @@
 						[soube.config :as config])
   (:import [java.net URLEncoder]))
 
+;(System/setProperty "org.mortbay.util.URI.charset" "utf-8")
+;(System/setProperty "org.eclipse.jetty.util.URI.charset" "utf-8")
 
 (defn wrap-auth
   "验证的逻辑"

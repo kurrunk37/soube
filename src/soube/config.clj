@@ -15,7 +15,7 @@
   "取得Cloud Foundry数据库信息"
   []
   (let [vs (System/getenv "VCAP_SERVICES")
-        vc ((first (vals (cheshire/parse-string vs))) "credentials")]
+        vc ((first ((cheshire/parse-string vs) "mysql-5.1")) "credentials")]
     {:subprotocol "mysql"
      :subname (str "//" (vc "host") ":" (vc "port") "/" (vc "name") "?characterEncoding=UTF-8")
      :user (vc "user")
@@ -72,37 +72,49 @@
 
 (defn push-tag 
   "新的文章"
-  [site-name id title tags-str]
-  (if (contains? tag-map site-name)
-    (doseq [tag (apply hash-set (clojure.string/split tags-str #","))]
-      (if (not (= tag ""))
-        (if (contains? (deref (tag-map site-name)) tag)
-          (swap! (tag-map site-name) update-in [tag] conj {:id id :title title})
-          (swap! (tag-map site-name) assoc tag [{:id id :title title}]))))))
+  [site-id id title tags-str]
+  (if (contains? tag-map site-id)
+    (doseq [tag (apply hash-set (filter #(not (= % "")) (map #(clojure.string/trim %) (clojure.string/split tags-str #","))))]
+      (if (contains? (deref (tag-map site-id)) tag)
+        (swap! (tag-map site-id) update-in [tag] conj {:id id :title title})
+        (swap! (tag-map site-id) assoc tag [{:id id :title title}])))))
 
 (def sort-tags
   "按文章数排序"
-  (atom (zipmap (keys sites) (for [site (keys sites)] []))))
+  (atom (zipmap (keys sites) (for [site-id (keys sites)] []))))
 
 (defn update-sort-tag
   "更新排序后的tag"
-  [site-name]
-  (if (contains? (deref sort-tags) site-name)
-    (swap! sort-tags assoc site-name
+  [site-id]
+  (if (contains? (deref sort-tags) site-id)
+    (swap! sort-tags assoc site-id
            (take 50
                  (keys
                    (sort
                      #(compare (count (last %2)) (count (last %1)))
-                     (deref (tag-map site-name))))))))
+                     (deref (tag-map site-id))))))))
 
 ; 更新现有文章的tag
-(doseq [site-name (keys tag-map)]
+(doseq [site-id (keys tag-map)]
   (try
     (do
-      (doseq [row (jdbc/query mysql-db (sql/select [:title :id :tags] (get-tablename site-name) ["tags is not NULL"]))]
-        (push-tag site-name (:id row) (:title row) (:tags row)))
-      (update-sort-tag site-name))
-    (catch Exception e (println "更新tag失败" site-name (.getMessage e)))))
+      (doseq [row (jdbc/query mysql-db (sql/select [:title :id :tags] (get-tablename site-id) ["tags is not NULL"]))]
+        (push-tag site-id (:id row) (:title row) (:tags row)))
+      (update-sort-tag site-id))
+    (catch Exception e (println "更新tag失败" site-id (.getMessage e)))))
+
+(defn get-siteid
+  "取得站点id"
+  [hostname]
+  (if (contains? sites hostname)
+    hostname
+    "default"))
+
+(defn get-site-conf
+  "取得站点配置"
+  [req]
+  (sites (get-siteid (:server-name req))))
+
 
 #_(apply
     merge

@@ -25,10 +25,14 @@
         [:header :footer])))
 
 (defn view-index [req]
-  (render-page "dashboard" {:name (str (:session req))}))
+  (render-page "dashboard"
+               {:name (str (:session req))
+                :site-name (:name (config/get-site-conf req))}))
 
 (defn view-tools [req]
-  (render-page "tools" {:name (str (:session req))}))
+  (render-page "tools"
+               {:name (str (:session req))
+                :site-name (:name (config/get-site-conf req))}))
 
 (defn account-info [req]
   (let [info (dropbox/account-info config/consumer (:access-token (:session req)))]
@@ -80,12 +84,18 @@
         date (or (:date metadata) modified)
         todb (merge
                (select-keys md [:path :revision])
-               (select-keys metadata [:id :title :tags :categories])
+               (select-keys metadata [:id :title :categories])
                {:src "dropbox",
                 :account uid,
                 :date date,
                 :markdown file-content,
                 :modified modified,
+                :tags (clojure.string/join
+                        ","
+                        (filter
+                          #(not (= % ""))
+                          (map #(clojure.string/trim %)
+                               (clojure.string/split (:tags metadata) #","))))
                 :html (md-to-html-string md-string)})]
     (println (:title metadata))
     (cond
@@ -100,8 +110,8 @@
                                         (sql/select [:id :title :tags]
                                                     table-name
                                                     (sql/where {:src "dropbox" :account uid :path (:path md)})))]
-                (let [row (first rows)]
-                  (config/push-tag hostname (:id row) (:title row) (:tags row))))))
+                (if-let [row (first rows)]
+                  (config/push-tag (config/get-siteid hostname) (:id row) (:title row) (:tags row))))))
           (catch Exception e (println "caught exception: " (.getMessage e))))
       (= action :update)
         (try
@@ -145,7 +155,7 @@
             (update-db :update hostname (:uid access-token) md file-content))))
     (if (empty? update-md-list)
       "{\"msg\":\"没有更新\"}"
-      (do (config/update-sort-tag hostname)
+      (do (config/update-sort-tag (config/get-siteid hostname))
         (cheshire/generate-string update-md-list)))))
 
 (defn init-table [req]

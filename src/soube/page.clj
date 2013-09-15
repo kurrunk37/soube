@@ -8,24 +8,13 @@
 						;[cheshire.core :as cheshire]
             [clj-time [format :as timef] [coerce :as timec]]
 						[soube.config :as config])
-  (:import [java.net URLEncoder]))
+  (:import [java.net URLEncoder URLDecoder]))
 
-(defn get-siteid
-  "取得站点id"
-  [hostname]
-  (if (contains? config/sites hostname)
-    hostname
-    "default"))
-
-(defn get-site-conf
-  "取得站点配置"
-  [req]
-  (config/sites (get-siteid (:server-name req))))
 
 (defn render-page
   "渲染页面"
   [hostname template data]
-  (let [dir (get-siteid hostname)]
+  (let [dir (config/get-siteid hostname)]
     (clostache/render-resource
       (str dir "/templates/" template ".mustache")
       data
@@ -54,15 +43,15 @@
       (render-page
         (:server-name req)
         "index"
-        {:site-name (:name (get-site-conf req))
-         :site-desc (:description (get-site-conf req))
+        {:site-name (:name (config/get-site-conf req))
+         :site-desc (:description (config/get-site-conf req))
          :page-title "首页"
          :list l
          :p p
          :next (if (= limit (count l)) (inc p) false)
          :prev (if (= p 1) false (dec p))
          :tags (map #(into {} {:url (URLEncoder/encode %) :tag %})
-                    (take 30 ((deref config/sort-tags) (:server-name req))))}))))
+                    (take 30 ((deref config/sort-tags) (config/get-siteid (:server-name req)))))}))))
 
 (defn view-article
   "文章页"
@@ -83,9 +72,14 @@
             (:server-name req)
             "post"
             {:markdown (:html thepost)
-             :site-name (:name (get-site-conf req))
+             :site-name (:name (config/get-site-conf req))
              :post-date (:date thepost)
-             :tags (map #(into {}  {:url (URLEncoder/encode %) :tag %}) (clojure.string/split (:tags thepost) #","))
+             :tags (if
+                     (:tags thepost)
+                     (map #(into {}  {:url (URLEncoder/encode %) :tag %})
+                          (filter #(not (= % ""))
+                                  (map #(clojure.string/trim %)
+                                       (clojure.string/split (:tags thepost) #",")))))
              :page-title (:title thepost)})
         (= gettype "md")
           (:markdown thepost)
@@ -96,22 +90,23 @@
 (defn view-tag
   "tag聚合页"
   [req]
-  (let [tag (:tag (:params req))
+  (let [tag (clojure.string/trim (URLDecoder/decode (:tag (:params req)) "utf-8"))
         hostname (:server-name req)
         table-name (config/get-tablename hostname)
-        tag-posts ((deref (config/tag-map hostname)) tag)]
+        tag-posts ((deref (config/tag-map (config/get-siteid hostname))) tag)]
     (render-page (:server-name req)
-                 "tag" {:site-name (:name (get-site-conf req))
-                        :page-title tag
-                        :list tag-posts
-                        :tags (map
-                                #(into {} {:url (URLEncoder/encode %) :tag %})
-                                (take 30 ((deref config/sort-tags) hostname)))})))
+                 "tag"
+                 {:site-name (:name (config/get-site-conf req))
+                  :page-title tag
+                  :list tag-posts
+                  :tags (map
+                          #(into {} {:url (URLEncoder/encode %) :tag %})
+                          (take 30 ((deref config/sort-tags) (config/get-siteid hostname))))})))
 
 (defn view-test 
   "test"
   [req]
-  (str (System/getenv "VCAP_SERVICES"))
+  (str (map #(str %1 (deref %2)) config/tag-map))
   #_(let [t
         (reduce #(merge-with concat %1 %2) (for [row (jdbc/query config/mysql-db (sql/select [:title :id :tags] "blogkurrunkcom_posts" ["tags is not NULL"]))]
           (reduce #(assoc %1 (first %2) [(nth %2 1)]) {} (for [tag (clojure.string/split (:tags row) #",")] [tag (select-keys row [:title :id])]))))]
