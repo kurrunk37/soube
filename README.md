@@ -21,17 +21,17 @@
 
 可以通过设置系统环境变量或JVM环境变量两种方式来配置您的站点
 
-|| *系统环境变量*		||	*JVM环境变量*		||	*说明*														||
-|| DB_SUBNAME				||	db.subname			|| 	db连接，如://127.0.0.1:3306/soube	||
-|| DB_USER					||	db.user					||	db用户名 ||
-|| DB_PASSWORD			||	db.password			||	db密码	||
-|| DROPBOX_KEY			||	dropbox.key			||	dropbox key	||
-|| DROPBOX_SECRET		||	dropbox.secret	||	dropbox.secret	||
-|| DROPBOX_UID			||	dropbox.uid			||	dropbox帐号白名单，用","分隔多个uid	||
-|| SITE_NAME				||	site.name				||	blog主题，将会显示在网页的title上	||
+|| *系统环境变量*		||	*JVM环境变量*		||	*说明*														||  
+|| DB_SUBNAME				||	db.subname			|| 	db连接，如://127.0.0.1:3306/soube	||  
+|| DB_USER					||	db.user					||	db用户名 ||  
+|| DB_PASSWORD			||	db.password			||	db密码	||  
+|| DROPBOX_KEY			||	dropbox.key			||	dropbox key	||  
+|| DROPBOX_SECRET		||	dropbox.secret	||	dropbox.secret	||  
+|| DROPBOX_UID			||	dropbox.uid			||	dropbox帐号白名单，用","分隔多个uid	||  
+|| SITE_NAME				||	site.name				||	blog主题，将会显示在网页的title上	||  
 || SITE_DESCIPTION	||	site.desciption	||	blog简介	||
 
-### 常见paas平台的配置方法
+### 常见appengine平台的配置方法
 
 #### jelastic
 
