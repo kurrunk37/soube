@@ -204,7 +204,7 @@
       error
         (response (str "Authentication error " error))
       (and oauth-token uid)
-        (if (contains? config/allow-dropbox-set uid)
+        (if (contains? config/allow-dropbox-map uid)
           (-> (redirect url)
             (assoc :session
                    (assoc session

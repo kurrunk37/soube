@@ -36,7 +36,7 @@
         l (try
             (jdbc/query
               config/mysql-db
-              (sql/select [:date :title :id :html] table-name (sql/order-by {:date :desc}) (str "limit " (* limit (dec p)) "," limit)))
+              (sql/select [:date :title :id :account :html] table-name (sql/order-by {:date :desc}) (str "limit " (* limit (dec p)) "," limit)))
             (catch Exception e nil))]
     (if (not l)
       (clostache/render-resource (str "templates/doc/install.mustache") {})
@@ -46,7 +46,7 @@
         {:site-name (:name (config/get-site-conf req))
          :site-desc (:description (config/get-site-conf req))
          :page-title "首页"
-         :list l
+         :list (map #(merge % {:account (get config/allow-dropbox-map (:account  %) (:account  %))}) l)
          :p p
          :next (if (= limit (count l)) (inc p) false)
          :prev (if (= p 1) false (dec p))
@@ -62,7 +62,7 @@
         gettype (:type (:params req))
         l (jdbc/query
             config/mysql-db
-            (sql/select [:markdown :html :title :date :tags] table-name (sql/where {:id id})))
+            (sql/select [:markdown :html :title :date :tags :account] table-name (sql/where {:id id})))
         thepost (first l)
         ]
     (if thepost
@@ -74,6 +74,8 @@
             {:markdown (:html thepost)
              :site-name (:name (config/get-site-conf req))
              :post-date (:date thepost)
+             :post-id id
+             :post-account (get config/allow-dropbox-map (:account  thepost) (:account  thepost))
              :tags (if
                      (:tags thepost)
                      (map #(into {}  {:url (URLEncoder/encode % "utf-8") :tag %})

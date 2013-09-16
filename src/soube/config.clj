@@ -22,16 +22,19 @@
      :password (vc "password")}))
 
 
-(def allow-dropbox-set
+(def allow-dropbox-map
   "dropbox uid 白名单"
-  (apply
-    hash-set
-    (clojure.string/split
-      (or
-        (System/getenv "DROPBOX_UID")
-        (System/getProperty "dropbox.uid")
-        "77401815")
-      #"[^\d]+")))
+  (let [uid-list (clojure.string/split
+                   (or (System/getenv "DROPBOX_UID") (System/getProperty "dropbox.uid") "77401815:zhengquan")
+                   #",")]
+    (apply merge
+      (map
+        (fn [uid-str]
+          (if-let [uid-fields (clojure.string/split uid-str #":" 2)]
+            {(get uid-fields 0) (get uid-fields 1)}))
+        uid-list))))
+(println allow-dropbox-map)
+
 
 (def sites
   "站点配置,可以挂多个blog"

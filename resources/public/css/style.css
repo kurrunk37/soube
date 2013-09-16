@@ -7,6 +7,7 @@ footer {
 	text-align: center;
 	padding: 1em;
 	font-size: 80%;
+	clear:both;
 }
 header{overflow:hidden;height:35px;}
 header.pure-menu li a{padding-left:4px; padding-right:4px;}

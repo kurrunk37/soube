@@ -18,7 +18,7 @@
                         (tag :guid nil link)
                         (tag :title nil title)
                         (tag :dc:creator nil author)
-                        (tag :description nil content)
+                        (tag :description nil (str "<![CDATA[\n" content "\n]]>"))
                         (tag :link nil link)
                         (tag :pubDate nil (format-time time))
                         (tag :category nil "clojure"))))
@@ -49,7 +49,9 @@
         rows (jdbc/query
                config/mysql-db
                (sql/select [:date :title :id :html :account] table-name (sql/order-by {:date :desc}) "limit 10"))]
-    (with-out-str (clojure.xml/emit
+    {:status 200
+     :headers {"Content-Type" "text/xml; charset=UTF-8"}
+     :body (with-out-str (clojure.xml/emit
                     (message
                       (str "http://" (:server-name req))
                       (:name app "")
@@ -59,6 +61,6 @@
                       (map
                         #(merge
                            (select-keys % [:title :id])
-                           {:time (timec/from-sql-date (:date %)) :content (:html %) :author (:account %)})
-                        rows))))))
+                           {:time (timec/from-sql-date (:date %)) :content (:html %) :author (get config/allow-dropbox-map (:account %) (:account %))})
+                        rows))))}))
 
