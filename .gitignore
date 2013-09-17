@@ -9,3 +9,5 @@ old
 test*
 /*.sh
 blog.kurrunk.com
+*.*.org
+*.*.name
