@@ -44,6 +44,10 @@
               :desciption (or (System/getenv "SITE_DESCIPTION")
                               (System/getProperty "site.desciption")
                               "一个简单易用的博客引擎")}
+   "hu.yudao.org" {:name "胡遇到"
+                   :description "di di dididi .超级玛丽"}
+   "hu.yujian.name" {:name "胡遇见"
+                     :description "di di dididi .超级玛丽"}
    "blog.kurrunk.com" {:name "kurrunk"
                        :description "不停转圈的人"}})
 
