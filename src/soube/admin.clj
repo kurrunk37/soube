@@ -134,7 +134,7 @@
                        config/consumer
                        access-token
                        "sandbox"
-                       (str hostname "/posts"))
+                       hostname)
         md-list (seq (filter #(and
                                 (= (:mime_type %) "application/octet-stream")
                                 (= (:is_dir %) false))
