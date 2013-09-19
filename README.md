@@ -8,7 +8,7 @@
 ## 运行环境
 
 * 程序运行在java servlet环境，推荐使用tomcat、jetty。
-* 需要一个数据库，目前仅支持mysql
+* 需要一个数据库，目前仅支持mysql/mariadb
 * 需要您有dropbox帐号，并有开发者的key
 
 ## 部署步骤
@@ -27,9 +27,7 @@
 可以通过设置系统环境变量或JVM环境变量两种方式来配置您的站点
 
 || *系统环境变量*		||	*JVM环境变量*		||	*说明*														||  
-|| DB_SUBNAME				||	db.subname			|| 	db连接，如://127.0.0.1:3306/soube	||  
-|| DB_USER					||	db.user					||	db用户名 ||  
-|| DB_PASSWORD			||	db.password			||	db密码	||  
+|| DATABASE_URL			||	database.url		|| 	db连接，如:mysql://user:password@127.0.0.1:3306/soube	||  
 || DROPBOX_KEY			||	dropbox.key			||	dropbox key	||  
 || DROPBOX_SECRET		||	dropbox.secret	||	dropbox.secret	||  
 || DROPBOX_UID			||	dropbox.uid			||	dropbox帐号白名单，用","分隔多个uid	||  
@@ -40,7 +38,7 @@
 
 推荐使用jetty。下载jetty并解压后把以上的内容加入到/bin/jetty.sh，示例：
 
-	JAVA_OPTIONS="-Xmx400m -Xms400m -Ddb.subname=//localhost:3306/soube?characterEncoding=UTF-8 -Ddb.user=* -Ddb.password=* -Ddropbox.key=* -Ddropbox.secret=* -Ddropbox.uid=uid1:uname1,uid2:uname2"
+	JAVA_OPTIONS="-Xmx400m -Xms400m -Ddatabase.url=mysql://user:pw@localhost:3306/soube?characterEncoding=UTF-8 -Ddropbox.key=* -Ddropbox.secret=* -Ddropbox.uid=uid1:uname1,uid2:uname2"
 
 把soube.war放入webapps目录里，并命名为`root.war`
 
@@ -60,9 +58,7 @@
 	-Ddropbox.secret=   
 	-Ddropbox.uid= #dropbox的uid,这里是同步文章用的   ,多个id请用英文逗号分隔
 	\#你的数据库 
-	-Ddb.subname=//mariadb-*.jelastic.servint.net/*?characterEncoding=UTF-8  
-	-Ddb.user=***  
-	-Ddb.password=***  
+	-Ddatabase.url=mysql://user:password@mariadb-*.jelastic.servint.net/*?characterEncoding=UTF-8  
 	\#你的站点信息  
 	-Dsite.name=myblog  
 	-Dsite.desciption=这是我的博客简介  

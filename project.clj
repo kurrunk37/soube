@@ -1,21 +1,22 @@
 (defproject soube "0.1.0-SNAPSHOT"
-  :description "FIXME: write description"
-  :url "http://example.com/FIXME"
+  :description "这是一个个人blog引擎"
+  :url "https://github.com/huzhengquan/soube"
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [compojure "1.1.5"]
 								 [de.ubercode.clostache/clostache "1.3.1"]
-;								 [jopbox "0.1.0-SNAPSHOT"]
                  [org.clojure/java.jdbc "0.3.0-alpha4"]
                  [mysql/mysql-connector-java "5.1.25"]
-;                 [korma "0.3.0-RC5"]
+                 [postgresql/postgresql "8.4-702.jdbc4"]
                  [clj-oauth "1.4.0"]
                  [cheshire "5.2.0"]
-;                 [markdown-clj "0.9.28"]
                  [endophile "0.1.0"]
                  [markdown-clj "0.9.29"]
                  [clj-time "0.5.1"]
+;                 [com.cemerick/url "0.1.0"]
+;                 [hiccup "1.0.4"]
+;                 [clj-uri "0.1.0"]
 ;								 [clj-dropbox "1.2.1"]
-                 [hiccup "1.0.4"]
+;                 [korma "0.3.0-RC5"]
 ;                 [enlive "1.1.1"]
 ;                 [sandbar/sandbar "0.4.0-SNAPSHOT"]
 								 ;[clj-oauth "1.4.0"]

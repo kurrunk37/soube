@@ -35,8 +35,8 @@
         limit 5
         l (try
             (jdbc/query
-              config/mysql-db
-              (sql/select [:date :title :id :account :html] table-name (sql/order-by {:date :desc}) (str "limit " (* limit (dec p)) "," limit)))
+              config/db-spec
+              (sql/select [:date :title :id :account :html] table-name (sql/order-by {:date :desc}) (str "limit " limit " OFFSET " (* limit (dec p)))))
             (catch Exception e nil))]
     (if (not l)
       (clostache/render-resource (str "templates/doc/install.mustache") {})
@@ -61,7 +61,7 @@
         id (:id (:params req))
         gettype (:type (:params req))
         l (jdbc/query
-            config/mysql-db
+            config/db-spec
             (sql/select [:markdown :html :title :date :tags :account] table-name (sql/where {:id id})))
         thepost (first l)
         ]
@@ -100,7 +100,7 @@
                  "tag"
                  {:site-name (:name (config/get-site-conf req))
                   :page-title tag
-                  :list tag-posts
+                  :list (reverse tag-posts)
                   :tags (map
                           #(into {} {:url (URLEncoder/encode % "utf-8") :tag %})
                           (take 30 ((deref config/sort-tags) (config/get-siteid hostname))))})))
@@ -110,6 +110,6 @@
   [req]
   (str (map #(str %1 (deref %2)) config/tag-map))
   #_(let [t
-        (reduce #(merge-with concat %1 %2) (for [row (jdbc/query config/mysql-db (sql/select [:title :id :tags] "blogkurrunkcom_posts" ["tags is not NULL"]))]
+        (reduce #(merge-with concat %1 %2) (for [row (jdbc/query config/db-spec (sql/select [:title :id :tags] "blogkurrunkcom_posts" ["tags is not NULL"]))]
           (reduce #(assoc %1 (first %2) [(nth %2 1)]) {} (for [tag (clojure.string/split (:tags row) #",")] [tag (select-keys row [:title :id])]))))]
     (pr-str t)))

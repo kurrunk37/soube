@@ -47,7 +47,7 @@
   (let [table-name (config/get-tablename (:server-name req))
         app (config/sites (:server-name req))
         rows (jdbc/query
-               config/mysql-db
+               config/db-spec
                (sql/select [:date :title :id :html :account] table-name (sql/order-by {:date :desc}) "limit 10"))]
     {:status 200
      :headers {"Content-Type" "text/xml; charset=UTF-8"}

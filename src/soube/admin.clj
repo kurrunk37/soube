@@ -45,7 +45,7 @@
   (println (str src uid hostname))
   (let [table-name (config/get-tablename hostname)
         l (jdbc/query
-            config/mysql-db
+            config/db-spec
             (sql/select
               [:id :path :revision :modified]
               table-name
@@ -106,9 +106,9 @@
       (= action :insert)
         (try
           (do 
-            (jdbc/insert! config/mysql-db table-name todb)
+            (jdbc/insert! config/db-spec table-name todb)
             (if (contains? metadata :tags)
-              (if-let [rows (jdbc/query config/mysql-db
+              (if-let [rows (jdbc/query config/db-spec
                                         (sql/select [:id :title :tags]
                                                     table-name
                                                     (sql/where {:src "dropbox" :account uid :path (:path md)})))]
@@ -118,7 +118,7 @@
       (= action :update)
         (try
           (jdbc/update!
-            config/mysql-db
+            config/db-spec
             table-name
             (select-keys todb [:markdown :title :modified :date :revision :html])
             (sql/where {:account uid :path (:path md)}))
@@ -164,24 +164,41 @@
   "初始化table"
   (try
     (do
-      (jdbc/with-connection config/mysql-db
-        (jdbc/create-table
-          (str "if not exists " (config/get-tablename (:server-name req)))
-          [:id :integer "UNSIGNED" "PRIMARY KEY" "AUTO_INCREMENT"]
-          [:path "varchar(64)" "not null"]
-          [:revision :smallint "UNSIGNED" "not null" "default 0"]
-          [:date "datetime" "not null"]
-          [:modified "datetime" "not null"]
-          [:title "tinytext" "not null"]
-          [:src "enum('dropbox','write')" "not null" "default 'write'"]
-          [:account "tinytext"]
-          [:tags "tinytext"]
-          [:categories "varchar(64)"]
-          [:markdown "mediumtext"]
-          [:html "mediumtext"]
-          ))
+      (jdbc/with-connection
+        config/db-spec
+        (if (= config/db-protocol "postgres")
+          (jdbc/create-table
+            (str "if not exists " (config/get-tablename (:server-name req)))
+            [:id :serial "PRIMARY KEY"]
+            [:path :varchar "not null"]
+            [:revision :smallint "not null" "default 0"]
+            [:date :timestamp "not null"]
+            [:modified :timestamp "not null"]
+            [:title :varchar "not null"]
+            [:src :varchar "not null" "default 'write'"]
+            [:account :varchar]
+            [:tags :varchar]
+            [:categories :varchar]
+            [:markdown :text]
+            [:html :text]
+            )
+          (jdbc/create-table
+            (str "if not exists " (config/get-tablename (:server-name req)))
+            [:id :integer "UNSIGNED" "PRIMARY KEY" "AUTO_INCREMENT"]
+            [:path "varchar(64)" "not null"]
+            [:revision :smallint "UNSIGNED" "not null" "default 0"]
+            [:date "datetime" "not null"]
+            [:modified "datetime" "not null"]
+            [:title "tinytext" "not null"]
+            [:src "enum('dropbox','write')" "not null" "default 'write'"]
+            [:account "tinytext"]
+            [:tags "tinytext"]
+            [:categories "varchar(64)"]
+            [:markdown "mediumtext"]
+            [:html "mediumtext"]
+            )))
       (str "{\"status\": 1, \"msg\": \"初始化完成\"}"))
-    (catch Exception e (str "{\"error\": \"caught exception: " (.getMessage e) "\"}"))))
+    (catch Exception e (str "{\"error\": \"caught exception: " (.getMessage e) (.getNextException e) "\", \"protocol\": \"" config/db-protocol "\"}"))))
 
 ; 身份判断
 (defn authenticated

@@ -22,7 +22,6 @@
      :user (vc "user")
      :password (vc "password")}))
 
-
 (def allow-dropbox-map
   "dropbox uid 白名单"
   (let [uid-list (clojure.string/split
@@ -51,16 +50,32 @@
                        :description "不停转圈的人"}})
 
 ;db连接
-(def mysql-db
-  (if (System/getenv "VCAP_SERVICES")
-    (get-cf-dbsec)
-    {:subprotocol "mysql"
-     :subname (or (System/getProperty "db.subname")
-                  (System/getenv "DB_SUBNAME"))
-     :user (or (System/getProperty "db.user")
-               (System/getenv "DB_USER"))
-     :password (or (System/getProperty "db.password")
-                   (System/getenv "DB_PASSWORD"))}))
+(def db-spec
+  (cond
+    (System/getenv "VCAP_SERVICES")
+      (get-cf-dbsec)
+    (System/getenv "DATABASE_URL")
+      (System/getenv "DATABASE_URL")
+    (System/getProperty "database.url")
+      (System/getProperty "database.url")
+      ;(get-url-dbsec)
+    :else
+      {:subprotocol (or (System/getenv "DB_SUBPROTOCOL")
+                        (System/getProperty "db.subprotocol")
+                        "mysql")
+       :subname (or (System/getProperty "db.subname")
+                    (System/getenv "DB_SUBNAME"))
+       :user (or (System/getProperty "db.user")
+                 (System/getenv "DB_USER"))
+       :password (or (System/getProperty "db.password")
+                     (System/getenv "DB_PASSWORD"))}))
+
+(def db-protocol
+  "取得db的类型"
+  (if (string? db-spec)
+    (get (clojure.string/split db-spec #":") 0 "mysql")
+    (get db-spec :subprotocol "mysql")))
+
 (defn get-tablename
   [hostname]
   (str
@@ -110,7 +125,7 @@
 (doseq [site-id (keys tag-map)]
   (try
     (do
-      (doseq [row (jdbc/query mysql-db (sql/select [:title :id :tags :date] (get-tablename site-id) ["tags is not NULL"]))]
+      (doseq [row (jdbc/query db-spec (sql/select [:title :id :tags :date] (get-tablename site-id) ["tags is not NULL"]))]
         (push-tag site-id (:id row) (:title row) (:date row) (:tags row)))
       (update-sort-tag site-id))
     (catch Exception e (println "更新tag失败" site-id (.getMessage e)))))
