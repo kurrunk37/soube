@@ -15,10 +15,12 @@
 
 1. 部署war文件到环境中
 2. 设置环境变量 (参见下方)
-3. 启动jetty/tomcat后，通过浏览器访问http://yourhostname/admin(会要求登录dropbox);
-4. 启动mysql服务
-5. 点击"工具->初始化数据库"按钮，这个会在您的db中建一个table;
-6. 点击同步按钮，这样会把dropbox的\*.md文件同步到db中，站点部署就完成了
+3. 启动jetty/tomcat后，通过浏览器访问http://yourhostname/admin(会要求登录dropbox);   
+   登录后会在`dropbox/apps(中文帐号是"应用")/`下创建soube文件夹。
+4. 创建和域名相同的目录在soube目录下，只有这个目录里存放的\*.md文件会同步。
+5. 启动mysql服务
+6. 点击"工具->初始化数据库"按钮，这个会在您的db中建一个table;
+7. 点击同步按钮，这样会把dropbox的\*.md文件同步到db中，站点部署就完成了
 
 ## 配置
 
@@ -33,6 +35,18 @@
 || DROPBOX_UID			||	dropbox.uid			||	dropbox帐号白名单，用","分隔多个uid	||  
 || SITE_NAME				||	site.name				||	blog主题，将会显示在网页的title上	||  
 || SITE_DESCIPTION	||	site.desciption	||	blog简介	||
+
+### vps主机配置
+
+推荐使用jetty。下载jetty并解压后把以上的内容加入到/bin/jetty.sh，示例：
+
+	JAVA_OPTIONS="-Xmx400m -Xms400m -Ddb.subname=//localhost:3306/soube?characterEncoding=UTF-8 -Ddb.user=* -Ddb.password=* -Ddropbox.key=* -Ddropbox.secret=* -Ddropbox.uid=uid1:uname1,uid2:uname2"
+
+把soube.war放入webapps目录里，并命名为`root.war`
+
+	sh bin/jetty.sh start
+
+启动后就能访问到blog了。
 
 ### 常见appengine平台的配置方法
 

@@ -1,7 +1,7 @@
 {{> header}}
 <div><button class="pure-button" id="sync-button"><i class="icon-refresh"></i> 同步</button></div>
 <br>
-<div id="ret-string" style="min-height:100px">同步dropbox帐户中相应目录，目录是/应用/soube/{hostname}/posts/</div>
+<div id="ret-string" style="min-height:100px">同步dropbox帐户中相应目录，目录通常格式为:"/应用/soube/{hostname}/"</div>
 <script type="text/javascript">
 $('#sync-button').click(function(){
 	if($(this).find('i:first').hasClass('icon-spin')){
