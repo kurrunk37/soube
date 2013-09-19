@@ -109,10 +109,11 @@
   [site-id]
   (if (contains? (deref sort-tags) site-id)
     (let [weight (fn [post]
-                   (- 60
-                      (/ (- (timecoerce/to-long (timelocal/local-now))
-                            (timecoerce/to-long (:date post)))
-                         2678400000)))]
+                   (max (- 60
+                           (/ (- (timecoerce/to-long (timelocal/local-now))
+                                 (timecoerce/to-long (:date post)))
+                              2678400000))
+                        1))]
       (swap! sort-tags assoc site-id
              (take 50
                    (keys
