@@ -7,15 +7,15 @@
 	<link rel="stylesheet" type="text/css" href="/css/pure-min.css" />
 	<link rel="stylesheet" type="text/css" href="/css/style.css" />
 	<link type="application/rss+xml" rel="alternate" href="/feed" />
+	{{#site-desc}}<meta name="description" content="{{site-desc}}" />{{/site-desc}}
+	<meta name="keywords" content="{{#tags}}{{tag}} {{/tags}}" />
 </head>
 <body>
 <header class="pure-menu pure-menu-open pure-menu-fixed pure-menu-horizontal">
 
 	<ul>
 		<li class="pure-menu-selected"><a href="/" title="首页">{{site-name}}</a></li>
-		{{#tags}}
-		<li><a href="/tag/{{url}}">{{tag}}</a></li>
-		{{/tags}}
+		{{#tags}}<li><a href="/tag/{{url}}">{{tag}}</a></li>{{/tags}}
 	</ul>
 </header>
 

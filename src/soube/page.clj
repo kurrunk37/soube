@@ -51,7 +51,7 @@
          :next (if (= limit (count l)) (inc p) false)
          :prev (if (= p 1) false (dec p))
          :tags (map #(into {} {:url (URLEncoder/encode % "utf-8") :tag %})
-                    (take 30 ((deref config/sort-tags) (config/get-siteid (:server-name req)))))}))))
+                    (take 45 ((deref config/sort-tags) (config/get-siteid (:server-name req)))))}))))
 
 (defn view-article
   "文章页"
