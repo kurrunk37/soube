@@ -3,6 +3,7 @@
 <br>
 <div id="ret-string" style="min-height:100px">同步dropbox帐户中相应目录，目录通常格式为:"/应用/soube/{hostname}/"</div>
 <script type="text/javascript">
+var limit=10;
 $('#sync-button').click(function(){
 	if($(this).find('i:first').hasClass('icon-spin')){
 		alert('同步进行中，如果长时间没反应请刷新页面后再试');
@@ -10,29 +11,37 @@ $('#sync-button').click(function(){
 	}
 	$(this).find('i[class]').addClass('icon-spin');
   $('#ret-string').hide();
+	sync_do();
+});
+function sync_do(){
+	$('#sync-button>i').addClass('icon-spin');
 	$.ajax({
 		url: "/admin/sync.json",
 		dataType: 'json',
 		success: function(data){
-			var html="";
-			if(data["msg"]){
-        html=data["msg"];
-			}else{
-				html="<table class=\"pure-table pure-table-bordered\"><thead><tr><th>path</th><th>date</th></tr></thead><tbody>";
-				$.each(data, function(i,row){
-					html+="<tr><td>"+row.path+"</td><td>"+row.modified+"</td></tr>";
-				});
-				html+='</tbody></table>';
-			}
-      $('#ret-string').html(html);
-      $('#ret-string').show();
 			$('#sync-button>i').removeClass('icon-spin');
+			if(! data["count"]){
+        alert("出现异常情况："+data);
+				return;
+			}
+			if(data["count"]==0){
+        	alert(data["msg"]);
+			}else{
+				if($('#sync_list').length==0){
+      		$('#ret-string').html("<table class=\"pure-table pure-table-bordered\" id=\"sync_list\"><thead><tr><th>path</th><th>date</th></tr></thead><tbody></tbody></table>");
+				}
+				$.each(data.list, function(i,row){
+					$('#sync_list>tbody').append("<tr><td>"+row.path+"</td><td>"+row.modified+"</td></tr>");
+				});
+      	$('#ret-string').show();
+				if(data['count']==limit) sync_do();
+			}
 		},
 		error: function(data){
-        alert("出错了");
+        alert("出错了"+data);
 				$('#sync-button>i').removeClass('icon-spin');
 		}
 	});
-});
+}
 </script>
 {{> footer}}

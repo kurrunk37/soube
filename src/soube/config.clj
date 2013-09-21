@@ -13,10 +13,10 @@
                     (System/getenv "DROPBOX_SECRET"))))
 
 (defn get-cf-dbsec
-  "取得Cloud Foundry数据库信息"
+  "取得Cloud Foundry数据库信息(appfog.com)"
   []
   (let [vs (System/getenv "VCAP_SERVICES")
-        vc ((first ((cheshire/parse-string vs) "mysql-5.1")) "credentials")]
+        vc (some (fn [[k v]] (when (re-matches #"^mysql-[\d.]+$" k) ((first v) "credentials"))) (cheshire/parse-string vs))]
     {:subprotocol "mysql"
      :subname (str "//" (vc "host") ":" (vc "port") "/" (vc "name") "?characterEncoding=UTF-8")
      :user (vc "user")
@@ -25,14 +25,14 @@
 (def allow-dropbox-map
   "dropbox uid 白名单"
   (let [uid-list (clojure.string/split
-                   (or (System/getenv "DROPBOX_UID") (System/getProperty "dropbox.uid") "77401815:zhengquan")
+                   (or (System/getenv "DROPBOX_UID")
+                       (System/getProperty "dropbox.uid")
+                       "77401815:zhengquan")
                    #",")]
-    (apply merge
-      (map
-        (fn [uid-str]
-          (if-let [uid-fields (clojure.string/split uid-str #":" 2)]
-            {(get uid-fields 0) (get uid-fields 1)}))
-        uid-list))))
+    (reduce
+      #(assoc % (get %2 0) (get %2 1 (get %2 0)))
+      {}
+      (map #(clojure.string/split % #":" 2) uid-list))))
 
 (def sites
   "站点配置,可以挂多个blog"
@@ -41,13 +41,21 @@
                         "soube")
               :desciption (or (System/getenv "SITE_DESCIPTION")
                               (System/getProperty "site.desciption")
-                              "一个简单易用的博客引擎")}
+                              "!未配置相应环境变量!")}
    "hu.yudao.org" {:name "胡遇到"
-                   :description "di di dididi"}
+                   :description "di di dididi"
+                   :hostname ["www.yudao.org" "yudao.org"]}
    "hu.yujian.name" {:name "胡遇见"
-                     :description "di di dididi"}
+                     :description "di di dididi"
+                     :hostname ["yujian.name" "www.yujian.name"]}
    "blog.kurrunk.com" {:name "kurrunk"
-                       :description "不停转圈的人"}})
+                       :description "不停转圈的人"
+                       :hostname ["kurrunk.com" "www.kurrunk.com"]}})
+
+(def hostname-map
+  "多个域名的关系,访问别名时会跳转"
+  (apply merge (map #(apply merge (for [hostname (:hostname (get % 1))] {hostname (first %)})) (filter #(:hostname (get % 1)) sites))))
+
 
 ;db连接
 (def db-spec
@@ -89,7 +97,8 @@
 
 (def tag-map
   "文章的tags"
-  (zipmap (keys sites) (for [site (keys sites)] (atom {}))))
+  (reduce #(assoc % %2 (atom {})) {} (keys sites)))
+  ;(zipmap (keys sites) (for [site (keys sites)] (atom {}))))
 
 (defn push-tag 
   "新的文章"
@@ -102,7 +111,8 @@
 
 (def sort-tags
   "按文章数排序"
-  (atom (zipmap (keys sites) (for [site-id (keys sites)] []))))
+  (atom (reduce #(assoc % %2 []) {} (keys sites))))
+  ;(atom (zipmap (keys sites) (for [site-id (keys sites)] []))))
 
 (defn update-sort-tag
   "更新排序后的tag"
@@ -142,14 +152,5 @@
   "取得站点配置"
   [req]
   (sites (get-siteid (:server-name req))))
-
-
-#_(apply
-    merge
-    (for [[site-name site-tags] tag-map]
-      {site-name (take 100
-                       (for [tag (sort #(compare (count (last %2)) (count (last %1)))
-                                         (deref site-tags))]
-                         (first tag)))}))
 
 

@@ -1,0 +1,31 @@
+{{> header}}
+
+<h1>使用说明</h2>
+
+<h2>存放路径及命名</h2>
+
+<p><code>dropbox/(应用|apps)/soube/{hostname}/{filename}.md</code></p>
+
+<p>每一篇文章对应一个*.md文件，这是一个markdown格式的文件，需要注意的是文件名第一个字符必须是字母或数字，否则系统则认为这是非公开的内容。</p>
+
+<h2>markdown元数据</h2>
+
+<p>正文以markdown书写即可，关于标题、时间等信息的内容可以叫做“元信息”，元信息的写法约定如下：
+
+<ol>
+<li>元信息必须从第一行开始，且元信息之间不能有空行</li>
+<li>每一行的形式都是<li><code>key: values</code></b></li>
+</ol>
+
+<p>标准的元信息包括：</p>
+
+<table border=1>
+<tr><th>date</th><td>日期</td><td>2013-04-02 或 2013-04-02 15:00:00</td></tr>
+<tr><th>title</th><td>文章标题</td><td></td></tr>
+<tr><th>tags</th><td>文章关键词</td><td>以英文逗号分隔多个</td></tr>
+</table>
+
+<p>如果有需要，也可以增加其它字段。</p>
+
+
+{{> footer}}

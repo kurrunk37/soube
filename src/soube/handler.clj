@@ -23,13 +23,16 @@
           (admin/authenticate req)
           (handler req))))
 
-#_(defn wrap-hostname
-  "判断域名是否有效"
+(defn wrap-hostname
+  "判断域名是否是别名"
 	[handler]
-	(fn [req]
-    (if (contains? config/sites (:server-name req))
-      (handler req)
-      (redirect (str "http://localhost:" (:server-port req))))))
+	(fn
+    [req]
+    (if-let [goto-hostname (get config/hostname-map (:server-name req))]
+      (merge
+        (redirect (str (name (:scheme req)) "://" goto-hostname ":" (:server-port req) (:uri req)))
+        {:status 301})
+      (handler req))))
 
 (defroutes app-routes
   (GET "/" [] page/view-index)
@@ -41,6 +44,7 @@
   (GET "/admin/info" [] admin/account-info)
   (GET "/admin/install" [] admin/init-table)
   (GET "/admin/tools" [] admin/view-tools)
+  (GET "/admin/doc" [] admin/view-doc)
   #_(GET "/test" [] page/view-test)
 ;  (GET "/test_https" [] (test-https))
   (GET ["/post/:id.:type", :id  #"[0-9]+", :type #"(html|md)"] [] page/view-article)
@@ -53,8 +57,9 @@
 ;  (handler/site app-routes))
 
 (def app
-	(-> app-routes
-    ;wrap-hostname
+	(->
+    app-routes
+    wrap-hostname
 		wrap-auth
 		wrap-session
 		wrap-keyword-params

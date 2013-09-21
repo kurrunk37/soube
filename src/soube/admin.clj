@@ -33,6 +33,10 @@
   (render-page "tools"
                {:name (str (:session req))
                 :site-name (:name (config/get-site-conf req))}))
+(defn view-doc [req]
+  (render-page "doc"
+               {:name (str (:session req))
+                :site-name (:name (config/get-site-conf req))}))
 
 (defn account-info [req]
   (let [info (dropbox/account-info config/consumer (:access-token (:session req)))]
@@ -109,11 +113,11 @@
             (jdbc/insert! config/db-spec table-name todb)
             (if (contains? metadata :tags)
               (if-let [rows (jdbc/query config/db-spec
-                                        (sql/select [:id :title :tags]
+                                        (sql/select [:id :title :tags :date]
                                                     table-name
                                                     (sql/where {:src "dropbox" :account uid :path (:path md)})))]
                 (if-let [row (first rows)]
-                  (config/push-tag (config/get-siteid hostname) (:id row) (:title row) (:tags row))))))
+                  (config/push-tag (config/get-siteid hostname) (:id row) (:title row) (:date row) (:tags row))))))
           (catch Exception e (println "caught exception: " (.getMessage e))))
       (= action :update)
         (try
@@ -127,7 +131,8 @@
 ; 文件同步
 (defn markdown-sync [req]
   "同步dropbox和数据库里的文章"
-  (println (:session req))
+  ;dropbox format {:path /blog.kurrunk.com/posts, :icon folder, :is_dir true, :root dropbox, :revision 998, :thumb_exists false, :bytes 0, :size 0 bytes, :modified Sat, 24 Aug 2013 00:28:26 +0000, :rev 3e610fa8ae3}
+  ;session format {:access-token {:oauth_token_secret ysuqlfi02u2q362, :oauth_token u8wec6wn8ztdb2oe, :uid 77401815}, :request-token {:oauth_token_secret eHa1wbJnMj1hP5sw, :oauth_token eaDZY4Y2FsAh3glo}}
   (let [hostname (:server-name req)
         access-token (:access-token (:session req))
         dir-matadata (dropbox/metadata
@@ -137,12 +142,15 @@
                        hostname)
         md-list (seq (filter #(and
                                 (= (:mime_type %) "application/octet-stream")
+                                (re-matches #"^[A-Za-z0-9](.+).md$" (last (clojure.string/split (:path %) #"/")))
                                 (= (:is_dir %) false))
                              (:contents dir-matadata)))
         db-map (get-db-dict "dropbox" (:uid (:access-token (:session req))) hostname)
-        update-md-list (filter (fn [md] (let [db-md (db-map (:path md))]
+        update-md-list (take 10 
+                             (filter (fn [md]
+                                       (let [db-md (db-map (:path md))]
                                           (not (and db-md (= (:revision db-md) (:revision md))))))
-                               md-list)]
+                               md-list))]
     (doseq [md update-md-list]
       (let [file-content (dropbox/get-file
                            config/consumer
@@ -156,9 +164,11 @@
           (not (= (:revision db-md) (:revision md)))
             (update-db :update hostname (:uid access-token) md file-content))))
     (if (empty? update-md-list)
-      "{\"msg\":\"没有更新\"}"
+      "{\"msg\":\"更新完成\", \"count\":0}"
       (do (config/update-sort-tag (config/get-siteid hostname))
-        (cheshire/generate-string update-md-list)))))
+        (cheshire/generate-string {:msg "更新完成"
+                                   :count (count update-md-list)
+                                   :list update-md-list})))))
 
 (defn init-table [req]
   "初始化table"
@@ -197,6 +207,10 @@
             [:markdown "mediumtext"]
             [:html "mediumtext"]
             )))
+      #_(dropbox/create-folder config/consumer
+                             (:access-token (:session req))
+                             :sandbox
+                             (str "/" (:server-name req)))
       (str "{\"status\": 1, \"msg\": \"初始化完成\"}"))
     (catch Exception e (str "{\"error\": \"caught exception: " (.getMessage e) (.getNextException e) "\", \"protocol\": \"" config/db-protocol "\"}"))))
 

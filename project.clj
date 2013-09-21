@@ -12,6 +12,7 @@
                  [endophile "0.1.0"]
                  [markdown-clj "0.9.29"]
                  [clj-time "0.5.1"]
+;                 [clj-http "0.7.7"]
 ;                 [com.cemerick/url "0.1.0"]
 ;                 [hiccup "1.0.4"]
 ;                 [clj-uri "0.1.0"]

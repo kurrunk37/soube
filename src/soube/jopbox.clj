@@ -3,6 +3,8 @@
             [clj-http.client :as http]
             [cheshire.core :refer :all]))
 
+; https://github.com/samrat/jopbox thanks
+
 ;; Authorization & Authentication
 (defn make-consumer
   "Return Dropbox OAuth consumer."
@@ -115,3 +117,15 @@
                                                                     :GET
                                                                     request-url
                                                                     nil)})) true)))
+
+(defn create-folder
+  "Creates a folder at `path`. Root can be either :sandbox or :dropbox."
+  [consumer access-token-response root path]
+  (let [request-url "https://api.dropbox.com/1/fileops/create_folder"
+        credentials (make-credentials consumer
+                                      access-token-response
+                                      :POST
+                                      request-url nil)]
+    (http/post request-url
+               {:query-params credentials
+                :body {:root (name root) :path path }})))

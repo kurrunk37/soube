@@ -7,7 +7,9 @@
 	</head>
 <body>
 
-<h1>安装</h1>
+<p>数据库不对劲，请检查配置是否正确</p>
+
+<h1>安装soube</h1>
 
 <h2>使用条件</h2>
 <ol>
@@ -36,9 +38,7 @@
 		<tr><th>系统环境变量</th><th>JVM环境变量</th><th>说明</th></tr>
 	</thead>
 	<tbody>
-	<tr><td>DB_SUBNAME</td><td>db.subname</td><td>db连接，如:<code>//127.0.0.1:3306/soube</code></td></tr>
-	<tr><td>DB_USER</td><td>db.user</td><td>db用户名</td></tr>
-	<tr><td>DB_PASSWORD</td><td>db.password</td><td>db密码</td></tr>
+	<tr><td>DATABASE_URL</td><td>database.url</td><td>db连接，如:<code>mysql://user:password@127.0.0.1:3306/soube</code></td></tr>
 	<tr><td>DROPBOX_KEY</td><td>dropbox.key</td><td>dropbox key</td></tr>
 	<tr><td>DROPBOX_SECRET</td><td>dropbox.secret</td><td>dropbox.secret</td></tr>
 	<tr><td>DROPBOX_UID</td><td>dropbox.uid</td><td>dropbox帐号白名单，用","分隔多个uid</td></tr>
@@ -46,6 +46,19 @@
 	<tr><td>SITE_DESCIPTION</td><td>site.desciption</td><td>blog简介</td></tr>
 	</tbody>
 </table>
+
+
+<h3>vps主机配置</h3>
+
+<p>推荐使用jetty。下载jetty并解压后把以上的内容加入到/bin/jetty.sh，示例：</p>
+
+<pre><code>JAVA_OPTIONS="-Xmx400m -Xms400m -Ddatabase.url=mysql://user:pw@localhost:3306/soube?characterEncoding=UTF-8 -Ddropbox.key=* -Ddropbox.secret=* -Ddropbox.uid=uid1:uname1,uid2:uname2" </code></pre>
+
+<p>把soube.war放入webapps目录里，并命名为<code>root.war</code></p>
+
+<pre><code>sh bin/jetty.sh start </code></pre>
+
+<p>启动后就能访问到blog了。</p>
 
 <h3>常见paas平台的配置方法</h3>
 
@@ -60,9 +73,7 @@
 -Ddropbox.uid=*** #dropbox的uid,这里是同步文章用的
 
 #你的数据库
--Ddb.subname=//mariadb-*.jelastic.servint.net/*?characterEncoding=UTF-8
--Ddb.user=***
--Ddb.password=***
+-Ddatabase.url=mysql://user:password@mariadb-*.jelastic.servint.net/*?characterEncoding=UTF-8  
 
 #你的站点信息
 -Dsite.name=myblog
