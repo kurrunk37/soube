@@ -125,12 +125,11 @@
                               2678400000))
                         1))]
       (swap! sort-tags assoc site-id
-             (take 50
                    (keys
                      (sort
                        #(compare (apply + (map weight (last %2)))
                                  (apply + (map weight (last %1))))
-                       (deref (tag-map site-id)))))))))
+                       (deref (tag-map site-id))))))))
 
 ; 更新现有文章的tag
 (doseq [site-id (keys tag-map)]

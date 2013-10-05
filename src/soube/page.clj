@@ -6,7 +6,7 @@
             [clojure.java.jdbc.sql :as sql]
 						[soube.jopbox :as dropbox]
 						;[cheshire.core :as cheshire]
-            [clj-time [format :as timef] [coerce :as timec]]
+            [clj-time [format :as timef] [coerce :as timec] [core :as timecore]]
 						[soube.config :as config])
   (:import [java.net URLEncoder URLDecoder]))
 
@@ -37,7 +37,8 @@
             (jdbc/query
               config/db-spec
               (sql/select [:date :title :id :account :html] table-name (sql/order-by {:date :desc}) (str "limit " limit " OFFSET " (* limit (dec p)))))
-            (catch Exception e nil))]
+            (catch Exception e nil))
+        tags (take 45 ((deref config/sort-tags) (config/get-siteid (:server-name req))))]
     (if (not l)
       (clostache/render-resource (str "templates/doc/install.mustache") {})
       (render-page
@@ -50,8 +51,9 @@
          :p p
          :next (if (= limit (count l)) (inc p) false)
          :prev (if (= p 1) false (dec p))
-         :tags (map #(into {} {:url (URLEncoder/encode % "utf-8") :tag %})
-                    (take 45 ((deref config/sort-tags) (config/get-siteid (:server-name req)))))}))))
+         :tags (for [tag tags]
+                 {:url (URLEncoder/encode tag "utf-8") :tag tag})
+         :keywords (take 10 tags)}))))
 
 (defn view-article
   "文章页"
@@ -92,18 +94,87 @@
 (defn view-tag
   "tag聚合页"
   [req]
-  (let [tag (clojure.string/trim (URLDecoder/decode (:tag (:params req)) "utf-8"))
+  (let [page-tag (clojure.string/trim (URLDecoder/decode (:tag (:params req)) "utf-8"))
         hostname (:server-name req)
-        table-name (config/get-tablename hostname)
-        tag-posts ((deref (config/tag-map (config/get-siteid hostname))) tag)]
+        tag-posts ((deref (config/tag-map (config/get-siteid hostname))) page-tag)
+        postid-set (apply hash-set (map #(:id %) tag-posts))
+        tags-set (disj (apply hash-set
+                        (for [[tag post-list] (deref (config/tag-map (config/get-siteid hostname)))]
+                          (if (> (count (clojure.set/intersection
+                                          postid-set
+                                          (apply hash-set (map #(:id %) post-list))))
+                                 0)
+                            tag)))
+                       nil)
+        sort-tags (filter #(contains? tags-set %) ((deref config/sort-tags) (config/get-siteid (:server-name req))))]
     (render-page (:server-name req)
                  "tag"
                  {:site-name (:name (config/get-site-conf req))
-                  :page-title tag
+                  :page-title page-tag
                   :list (reverse tag-posts)
-                  :tags (map
-                          #(into {} {:url (URLEncoder/encode % "utf-8") :tag %})
-                          (take 30 ((deref config/sort-tags) (config/get-siteid hostname))))})))
+                  :tags (for [tag sort-tags]
+                          {:url (URLEncoder/encode tag "utf-8") :tag tag})
+                  :keywords (take 10 sort-tags)})))
+(defn pro-robots
+  "robots.txt"
+  [req]
+  (str "User-agent: *\n"
+       "Allow:　/ \n"
+       "\n"
+       "Sitemap: http://" (:server-name req) "/sitemap.xml"))
+
+(defn format-time [time]
+  (timef/unparse (timef/formatter "yyyy-MM-dd") time))
+
+(defn make-url-tag
+  "get sitemap url tag"
+  [loc lastmod priority changefreq]
+  (str
+    "<url>\n"
+    "<loc>" loc "</loc>\n"
+    "<lastmod>" lastmod "</lastmod>\n"
+    "<priority>" priority "</priority>\n" 
+    "<changefreq>" changefreq "</changefreq>\n"
+    "</url>\n"))
+
+(defn pro-sitemap
+  "sitemap.xml"
+  [req]
+  {:status 200
+   :headers {"Content-Type" "text/xml; charset=UTF-8"}
+   :body
+  (str "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+       "<urlset xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" 
+                xsi:schemaLocation=\"http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd\"
+                xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n\n"
+       (make-url-tag
+         (str "http://" (:server-name req) "/")
+         "2013"
+         "1.0"
+         "always")
+       (apply
+         str
+         (for [[tag post-list] (deref (config/tag-map (config/get-siteid (:server-name req))))]
+           (make-url-tag
+             (str "http://" (:server-name req) "/tag/" (URLEncoder/encode tag))
+             (format-time (timec/from-long (.getTime (:date (first post-list)))))
+             (if (> (count post-list) 10)
+               "1.0"
+               (.format (java.text.DecimalFormat. "#.#") (/ (count post-list) 10)))
+             (cond
+               (< (count post-list) 2) "yearly"
+               (< (count post-list) 4) "monthly"
+               (< (count post-list) 8) "weekly"
+               :else "daily"))))
+       (apply
+         str
+         (for [post (apply hash-set (reduce #(concat %1 %2) [] (vals (deref (config/tag-map (config/get-siteid (:server-name req)))))))]
+           (make-url-tag
+             (str "http://" (:server-name req) "/post/" (:id post) ".html")
+             (format-time (timec/from-long (.getTime (:date post))))
+             "0.8"
+             "yearly")))
+       "\n</urlset>")})
 
 (defn view-test 
   "test"
@@ -113,3 +184,4 @@
         (reduce #(merge-with concat %1 %2) (for [row (jdbc/query config/db-spec (sql/select [:title :id :tags] "blogkurrunkcom_posts" ["tags is not NULL"]))]
           (reduce #(assoc %1 (first %2) [(nth %2 1)]) {} (for [tag (clojure.string/split (:tags row) #",")] [tag (select-keys row [:title :id])]))))]
     (pr-str t)))
+

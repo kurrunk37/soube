@@ -45,6 +45,8 @@
   (GET "/admin/install" [] admin/init-table)
   (GET "/admin/tools" [] admin/view-tools)
   (GET "/admin/doc" [] admin/view-doc)
+  (GET "/robots.txt" [] page/pro-robots)
+  (GET "/sitemap.xml" [] page/pro-sitemap)
   #_(GET "/test" [] page/view-test)
 ;  (GET "/test_https" [] (test-https))
   (GET ["/post/:id.:type", :id  #"[0-9]+", :type #"(html|md)"] [] page/view-article)

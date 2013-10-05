@@ -67,7 +67,7 @@
         meta-map (into {}
                        (for
                          [[_ k v] (map #(re-matches #"^([\w]+):[\s]*(.+)$" %) meta-lines)]
-                         [(keyword k) v]))]
+                         [(keyword (clojure.string/lower-case k)) v]))]
     {:meta meta-map :md-clj file-clj :md-string md-string}))
 
 ;clj-time用法
@@ -142,7 +142,7 @@
                        hostname)
         md-list (seq (filter #(and
                                 (= (:mime_type %) "application/octet-stream")
-                                (re-matches #"^[A-Za-z0-9](.+).md$" (last (clojure.string/split (:path %) #"/")))
+                                (re-matches #"^[^_\-#](.+).md$" (last (clojure.string/split (:path %) #"/")))
                                 (= (:is_dir %) false))
                              (:contents dir-matadata)))
         db-map (get-db-dict "dropbox" (:uid (:access-token (:session req))) hostname)

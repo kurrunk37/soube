@@ -11,7 +11,7 @@
                  [cheshire "5.2.0"]
                  [endophile "0.1.0"]
                  [markdown-clj "0.9.29"]
-                 [clj-time "0.5.1"]
+                 [clj-time "0.6.0"]
 ;                 [clj-http "0.7.7"]
 ;                 [com.cemerick/url "0.1.0"]
 ;                 [hiccup "1.0.4"]
