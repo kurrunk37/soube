@@ -2,7 +2,7 @@
 
 这是一个基于dropbox的个人博客引擎，可以轻松创建一个简洁的博客。
 
-* [下载war文件](http://pan.baidu.com/share/link?shareid=2749663359&uk=2366555814 "soube war")
+* [下载war文件](http://pan.baidu.com/share/link?shareid=2749663359&uk=2366555814#dir/path=%2Fshare%2Fsoube "soube war")
 * 默认样式可以参照这个博客:[kurrunk](http://blog.kurrunk.com "kurrunk")
 
 ## 运行环境
