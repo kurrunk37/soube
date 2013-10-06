@@ -53,7 +53,7 @@
          :prev (if (= p 1) false (dec p))
          :tags (for [tag tags]
                  {:url (URLEncoder/encode tag "utf-8") :tag tag})
-         :keywords (take 10 tags)}))))
+         :keywords (take 5 tags)}))))
 
 (defn view-article
   "文章页"
@@ -114,7 +114,7 @@
                   :list (reverse tag-posts)
                   :tags (for [tag sort-tags]
                           {:url (URLEncoder/encode tag "utf-8") :tag tag})
-                  :keywords (take 10 sort-tags)})))
+                  :keywords (take 5 sort-tags)})))
 (defn pro-robots
   "robots.txt"
   [req]
@@ -164,7 +164,7 @@
              str
              (for [[tag post-list] (deref (config/tag-map (config/get-siteid (:server-name req))))]
                (make-url-tag
-                 (str "http://" (:server-name req) "/tag/" (URLEncoder/encode tag))
+                 (str "http://" (:server-name req) "/tag/" (URLEncoder/encode tag "utf-8"))
                  (format-time (timec/from-long (.getTime (:date (first post-list)))))
                  (.format (java.text.DecimalFormat. "#.#")
                           (min (/ (count post-list) 10) 1))
