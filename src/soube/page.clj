@@ -6,7 +6,7 @@
             [clojure.java.jdbc.sql :as sql]
 						[soube.jopbox :as dropbox]
 						;[cheshire.core :as cheshire]
-            [clj-time [format :as timef] [coerce :as timec] [core :as timecore]]
+            [clj-time [format :as timef] [coerce :as timec] [core :as timecore] [local :as timel]]
 						[soube.config :as config])
   (:import [java.net URLEncoder URLDecoder]))
 
@@ -118,63 +118,78 @@
 (defn pro-robots
   "robots.txt"
   [req]
-  (str "User-agent: *\n"
-       "Allow:　/ \n"
-       "\n"
-       "Sitemap: http://" (:server-name req) "/sitemap.xml"))
+  {:status 200
+   :headers {"Content-Type" "text/plain; charset=UTF-8"}
+   :body (str "User-agent: *\n"
+              "Allow:　/ \n"
+              "\n"
+              "Sitemap: http://" (:server-name req) "/sitemap.xml")})
 
 (defn format-time [time]
   (timef/unparse (timef/formatter "yyyy-MM-dd") time))
 
-(defn make-url-tag
-  "get sitemap url tag"
-  [loc lastmod priority changefreq]
-  (str
-    "<url>\n"
-    "<loc>" loc "</loc>\n"
-    "<lastmod>" lastmod "</lastmod>\n"
-    "<priority>" priority "</priority>\n" 
-    "<changefreq>" changefreq "</changefreq>\n"
-    "</url>\n"))
-
 (defn pro-sitemap
   "sitemap.xml"
   [req]
-  {:status 200
-   :headers {"Content-Type" "text/xml; charset=UTF-8"}
-   :body
-  (str "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-       "<urlset xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" 
-                xsi:schemaLocation=\"http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd\"
-                xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n\n"
-       (make-url-tag
-         (str "http://" (:server-name req) "/")
-         "2013"
-         "1.0"
-         "always")
-       (apply
-         str
-         (for [[tag post-list] (deref (config/tag-map (config/get-siteid (:server-name req))))]
+  (let [post-set (apply hash-set (reduce #(concat %1 %2)
+                                         []
+                                         (vals (deref (config/tag-map (config/get-siteid (:server-name req)))))))
+        make-url-tag (fn [loc lastmod priority changefreq]
+                       (str
+                         "<url>\n"
+                         "<loc>" loc "</loc>\n"
+                         "<lastmod>" lastmod "</lastmod>\n"
+                         "<priority>" priority "</priority>\n"
+                         "<changefreq>" changefreq "</changefreq>\n"
+                         "</url>\n"))]
+
+    {:status 200
+     :headers {"Content-Type" "text/xml; charset=UTF-8"}
+     :body (str "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+           "<urlset xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" 
+                    xsi:schemaLocation=\"http://www.sitemaps.org/schemas/sitemap/0.9
+                                        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd\"
+                    xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n\n"
            (make-url-tag
-             (str "http://" (:server-name req) "/tag/" (URLEncoder/encode tag))
-             (format-time (timec/from-long (.getTime (:date (first post-list)))))
-             (if (> (count post-list) 10)
-               "1.0"
-               (.format (java.text.DecimalFormat. "#.#") (/ (count post-list) 10)))
-             (cond
-               (< (count post-list) 2) "yearly"
-               (< (count post-list) 4) "monthly"
-               (< (count post-list) 8) "weekly"
-               :else "daily"))))
-       (apply
-         str
-         (for [post (apply hash-set (reduce #(concat %1 %2) [] (vals (deref (config/tag-map (config/get-siteid (:server-name req)))))))]
-           (make-url-tag
-             (str "http://" (:server-name req) "/post/" (:id post) ".html")
-             (format-time (timec/from-long (.getTime (:date post))))
-             "0.8"
-             "yearly")))
-       "\n</urlset>")})
+             (str "http://" (:server-name req) "/")
+             (->
+               (reduce #(if (> (.getTime (:date %1)) (.getTime (:date %2))) %1 %2) post-set)
+               :date
+               .getTime
+               timec/from-long
+               format-time)
+             "1.0"
+             "always")
+           (apply
+             str
+             (for [[tag post-list] (deref (config/tag-map (config/get-siteid (:server-name req))))]
+               (make-url-tag
+                 (str "http://" (:server-name req) "/tag/" (URLEncoder/encode tag))
+                 (format-time (timec/from-long (.getTime (:date (first post-list)))))
+                 (.format (java.text.DecimalFormat. "#.#")
+                          (min (/ (count post-list) 10) 1))
+                 (cond
+                   (< (count post-list) 2) "yearly"
+                   (< (count post-list) 4) "monthly"
+                   (< (count post-list) 8) "weekly"
+                   :else "daily"))))
+           (apply
+             str
+             (for [post post-set]
+               (let [post-time-long (.getTime (:date post))
+                     time-length (- (timec/to-long (timel/local-now)) post-time-long)]
+                 (make-url-tag
+                   (str "http://" (:server-name req) "/post/" (:id post) ".html")
+                   (format-time (timec/from-long post-time-long))
+                   (.format (java.text.DecimalFormat. "#.#")
+                            (- 1
+                               (min (/ time-length 31536000000 10)
+                                    0.5)))
+                   (cond
+                     (< time-length 86400000) "hourly"
+                     (< time-length 2592000000) "daily"
+                     :else "yearly")))))
+           "\n</urlset>")}))
 
 (defn view-test 
   "test"
