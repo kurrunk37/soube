@@ -86,7 +86,9 @@
                                        (clojure.string/split (:tags thepost) #",")))))
              :page-title (:title thepost)})
         (= gettype "md")
-          (:markdown thepost)
+          {:status 200
+           :headers {"Content-Type" "text/plain; charset=UTF-8"}
+           :body (:markdown thepost)}
         :else
           (response (str "404")))
       (render-page (:server-name req) "post" {:markdown "404"}))))
