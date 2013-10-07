@@ -123,7 +123,7 @@
   {:status 200
    :headers {"Content-Type" "text/plain; charset=UTF-8"}
    :body (str "User-agent: *\n"
-              "Allow:　/ \n"
+              "Allow: / \n"
               "\n"
               "Sitemap: http://" (:server-name req) "/sitemap.xml")})
 
