@@ -20,8 +20,7 @@
                         (tag :dc:creator nil author)
                         (tag :description nil (str "<![CDATA[\n" content "\n]]>"))
                         (tag :link nil link)
-                        (tag :pubDate nil (format-time time))
-                        (tag :category nil "clojure"))))
+                        (tag :pubDate nil (format-time time)))))
 
 (defn message [site title description author lastdate posts]
   (tag :rss {:version "2.0"
