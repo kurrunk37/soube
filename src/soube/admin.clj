@@ -9,7 +9,6 @@
 						[cheshire.core :as cheshire]
             [endophile.core :as markdown]
             [clj-time [format :as timef] [coerce :as timec]]
-						[soube.to :as to]
 						[soube.config :as config]))
 
 (defn render-page [template data]
@@ -61,12 +60,12 @@
   "解析dropbox的文件，分离元数据和正文"
   [file-content]
   (let [lines (clojure.string/split-lines file-content)
-        meta-lines (take-while #(re-matches #"^[\w]+:(.+)$" %) lines)
+        meta-lines (take-while #(re-matches #"^[\w\s]+:(.+)$" %) lines)
         md-string (clojure.string/join "\n" (drop (count meta-lines) lines))
         file-clj (markdown/to-clj (markdown/mp md-string))
         meta-map (into {}
                        (for
-                         [[_ k v] (map #(re-matches #"^([\w]+):[\s]*(.+)$" %) meta-lines)]
+                         [[_ k v] (map #(re-matches #"^([\w]+)[\s]*:[\s]*(.+)$" %) meta-lines)]
                          [(keyword (clojure.string/lower-case k)) v]))]
     {:meta meta-map :md-clj file-clj :md-string md-string}))
 

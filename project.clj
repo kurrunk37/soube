@@ -2,16 +2,16 @@
   :description "这是一个个人blog引擎"
   :url "https://github.com/huzhengquan/soube"
   :dependencies [[org.clojure/clojure "1.5.1"]
-                 [compojure "1.1.5"]
+                 [compojure "1.1.6"]
 								 [de.ubercode.clostache/clostache "1.3.1"]
                  [org.clojure/java.jdbc "0.3.0-alpha4"]
                  [mysql/mysql-connector-java "5.1.25"]
                  [postgresql/postgresql "8.4-702.jdbc4"]
-                 [clj-oauth "1.4.0"]
-                 [cheshire "5.2.0"]
+                 [clj-oauth "1.5.1"]
+                 [cheshire "5.3.1"]
                  [endophile "0.1.0"]
                  [markdown-clj "0.9.29"]
-                 [clj-time "0.6.0"]
+                 [clj-time "0.7.0"]
 ;                 [clj-http "0.7.7"]
 ;                 [com.cemerick/url "0.1.0"]
 ;                 [hiccup "1.0.4"]
@@ -26,7 +26,7 @@
 ;								 [org.clojars.tavisrudd/clj-apache-http "2.3.2-SNAPSHOT"]
 
 								 ]
-  :plugins [[lein-ring "0.8.3"]]
+  :plugins [[lein-ring "0.8.10"]]
   :ring {:handler soube.handler/app}
   :profiles
-  {:dev {:dependencies [[ring-mock "0.1.3"]]}})
+  {:dev {:dependencies [[ring-mock "0.1.5"]]}})
