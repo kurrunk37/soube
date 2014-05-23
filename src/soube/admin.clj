@@ -1,6 +1,5 @@
 (ns soube.admin
   (:use [ring.util.response :only [redirect response]]
-        [markdown.core :only [md-to-html-string]]
 				[ring.middleware session params keyword-params])
   (:require [clostache.parser :as clostache]
             [clojure.java.jdbc :as jdbc]
@@ -61,13 +60,14 @@
   [file-content]
   (let [lines (clojure.string/split-lines file-content)
         meta-lines (take-while #(re-matches #"^[\w\s]+:(.+)$" %) lines)
-        md-string (clojure.string/join "\n" (drop (count meta-lines) lines))
-        file-clj (markdown/to-clj (markdown/mp md-string))
+        file-clj (markdown/to-clj
+                    (markdown/mp
+                       (clojure.string/join "\n" (drop (count meta-lines) lines))))
         meta-map (into {}
                        (for
                          [[_ k v] (map #(re-matches #"^([\w]+)[\s]*:[\s]*(.+)$" %) meta-lines)]
                          [(keyword (clojure.string/lower-case k)) v]))]
-    {:meta meta-map :md-clj file-clj :md-string md-string}))
+    {:meta meta-map :md-clj file-clj}))
 
 ;clj-time用法
 ;(parse (with-locale (formatters :rfc822) Locale/ENGLISH) "Wed, 4 Jul 2001 12:08:56 -0700" )
@@ -76,7 +76,7 @@
   [action hostname uid md file-content]
   (println action)
   (let [table-name (config/get-tablename hostname)
-        {file-clj :md-clj  metadata :meta md-string :md-string} (parse-markdown file-content)
+        {file-clj :md-clj  metadata :meta} (parse-markdown file-content)
         ;title (or (:title metadata)
                   ;(clojure.string/join " " (:content (some #(if (= (:tag %) :h1) %) file-clj))))
         modified (timef/unparse
@@ -101,7 +101,7 @@
                             (map #(clojure.string/trim %)
                                  (clojure.string/split (:tags metadata) #","))))
                         nil)
-                :html (md-to-html-string md-string)})]
+                :html (markdown/html-string file-clj)})]
     (println (:title metadata))
     (cond
       (= (:published metadata) "False")

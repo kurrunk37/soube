@@ -42,10 +42,10 @@
               :desciption (or (System/getenv "SITE_DESCIPTION")
                               (System/getProperty "site.desciption")
                               "!未配置相应环境变量!")}
-   "hu.yudao.org" {:name "胡遇到"
+   "hu.yudao.org" {:name "遇到"
                    :description "di di dididi"
                    :hostname ["www.yudao.org" "yudao.org"]}
-   "hu.yujian.name" {:name "胡遇见"
+   "hu.yujian.name" {:name "遇见"
                      :description "di di dididi"
                      :hostname ["yujian.name" "www.yujian.name"]}
    "blog.kurrunk.com" {:name "kurrunk"
