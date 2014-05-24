@@ -20,16 +20,16 @@ function sync_do(){
 		dataType: 'json',
 		success: function(data){
 			$('#sync-button>i').removeClass('icon-spin');
-			if(! data["count"]){
+			if(! data.hasOwnProperty("count")){
         alert("出现异常情况："+data);
 				return;
 			}
 			if(data["count"]==0){
         	alert(data["msg"]);
 			}else{
-				if($('#sync_list').length==0){
+				//if($('#sync_list').length==0){
       		$('#ret-string').html("<table class=\"pure-table pure-table-bordered\" id=\"sync_list\"><thead><tr><th>path</th><th>date</th></tr></thead><tbody></tbody></table>");
-				}
+				//}
 				$.each(data.list, function(i,row){
 					$('#sync_list>tbody').append("<tr><td>"+row.path+"</td><td>"+row.modified+"</td></tr>");
 				});

@@ -1,6 +1,5 @@
-
 body{background-color:#eee;}
-div.content{max-width:800px;margin:0px auto;margin-top:60px;}
+div.content{max-width:800px;margin:0px auto;margin-top:2em;padding:2em 1em 0px 1em;color:#333}
 footer {
 	background: #111;
 	color: #666;
@@ -8,9 +7,11 @@ footer {
 	padding: 1em;
 	font-size: 80%;
 	clear:both;
+	margin-top:2em;
 }
 header{overflow:hidden;height:35px;}
 header.pure-menu li a{padding-left:4px; padding-right:4px;}
 pre{background-color:#ccc;padding:9px;border-radius:3px;}
 #desc{text-align:center}
-.content section{margin-bottom:40px;}
+.content section{margin-bottom:3em;padding-bottom:2em;border-bottom:1px solid #ccc;}
+.pure-button{margin-bottom:1em}
