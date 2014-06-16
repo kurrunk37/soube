@@ -4,12 +4,11 @@
 				[ring.middleware session params keyword-params])
   (:require [compojure.handler :as handler]
             [compojure.route :as route]
-;            [clj-http.client :as client]
 						[soube.admin :as admin]
 						[soube.page :as page]
 						[soube.rss :as rss]
-						[soube.config :as config])
-  (:import [java.net URLEncoder]))
+						[soube.config :as config]))
+  ;(:import [java.net URLEncoder]))
 
 ;(System/setProperty "org.mortbay.util.URI.charset" "utf-8")
 ;(System/setProperty "org.eclipse.jetty.util.URI.charset" "utf-8")

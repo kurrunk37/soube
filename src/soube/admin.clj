@@ -5,10 +5,12 @@
             [clojure.java.jdbc :as jdbc]
             [clojure.java.jdbc.sql :as sql]
 						[soube.jopbox :as dropbox]
-						[cheshire.core :as cheshire]
-            [endophile.core :as markdown]
+						;[cheshire.core :as cheshire]
+            [clojure.data.json :as json]
+            ;[endophile.core :as markdown]
             [clj-time [format :as timef] [coerce :as timec]]
-						[soube.config :as config]))
+						[soube.config :as config])
+  (:import [org.pegdown PegDownProcessor]))
 
 (defn render-page [template data]
     (clostache/render-resource
@@ -60,14 +62,12 @@
   [file-content]
   (let [lines (clojure.string/split-lines file-content)
         meta-lines (take-while #(re-matches #"^[\w\s]+:(.+)$" %) lines)
-        file-clj (markdown/to-clj
-                    (markdown/mp
-                       (clojure.string/join "\n" (drop (count meta-lines) lines))))
+        md-string (clojure.string/join "\n" (drop (count meta-lines) lines))
         meta-map (into {}
                        (for
                          [[_ k v] (map #(re-matches #"^([\w]+)[\s]*:[\s]*(.+)$" %) meta-lines)]
                          [(keyword (clojure.string/lower-case k)) v]))]
-    {:meta meta-map :md-clj file-clj}))
+    {:meta meta-map :md-string md-string}))
 
 ;clj-time用法
 ;(parse (with-locale (formatters :rfc822) Locale/ENGLISH) "Wed, 4 Jul 2001 12:08:56 -0700" )
@@ -76,7 +76,7 @@
   [action hostname uid md file-content]
   (println action)
   (let [table-name (config/get-tablename hostname)
-        {file-clj :md-clj  metadata :meta} (parse-markdown file-content)
+        {md-string :md-string  metadata :meta} (parse-markdown file-content)
         ;title (or (:title metadata)
                   ;(clojure.string/join " " (:content (some #(if (= (:tag %) :h1) %) file-clj))))
         modified (timef/unparse
@@ -101,7 +101,7 @@
                             (map #(clojure.string/trim %)
                                  (clojure.string/split (:tags metadata) #","))))
                         nil)
-                :html (markdown/html-string file-clj)})]
+                :html (.markdownToHtml (PegDownProcessor.) md-string)})]
     (println (:title metadata))
     (cond
       (= (:published metadata) "False")
@@ -165,9 +165,9 @@
     (if (empty? update-md-list)
       "{\"msg\":\"更新完成\", \"count\":0}"
       (do (config/update-sort-tag (config/get-siteid hostname))
-        (cheshire/generate-string {:msg "更新完成"
-                                   :count (count update-md-list)
-                                   :list update-md-list})))))
+        (json/write-str {:msg "更新完成"
+                         :count (count update-md-list)
+                         :list update-md-list})))))
 
 (defn init-table [req]
   "初始化table"

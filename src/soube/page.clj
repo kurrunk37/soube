@@ -5,7 +5,6 @@
             [clojure.java.jdbc :as jdbc]
             [clojure.java.jdbc.sql :as sql]
 						[soube.jopbox :as dropbox]
-						;[cheshire.core :as cheshire]
             [clj-time [format :as timef] [coerce :as timec] [core :as timecore] [local :as timel]]
 						[soube.config :as config])
   (:import [java.net URLEncoder URLDecoder]))

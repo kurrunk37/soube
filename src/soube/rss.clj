@@ -2,7 +2,6 @@
   (:require [clojure.java.jdbc :as jdbc]
             [clojure.java.jdbc.sql :as sql]
             [clojure.xml]
-						;[cheshire.core :as cheshire]
             [clj-time [format :as timef] [coerce :as timec]]
 						[soube.config :as config]))
 

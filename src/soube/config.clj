@@ -1,7 +1,8 @@
 (ns soube.config
 	(:require [soube.jopbox :as dropbox]
             [clojure.java.jdbc :as jdbc]
-						[cheshire.core :as cheshire]
+						;[cheshire.core :as cheshire]
+            [clojure.data.json :as json]
             [clj-time  [coerce :as timecoerce] [local :as timelocal]]
             [clojure.java.jdbc.sql :as sql]))
 
@@ -16,7 +17,7 @@
   "取得Cloud Foundry数据库信息(appfog.com)"
   []
   (let [vs (System/getenv "VCAP_SERVICES")
-        vc (some (fn [[k v]] (when (re-matches #"^mysql-[\d.]+$" k) ((first v) "credentials"))) (cheshire/parse-string vs))]
+        vc (some (fn [[k v]] (when (re-matches #"^mysql-[\d.]+$" k) ((first v) "credentials"))) (json/read-str vs))]
     {:subprotocol "mysql"
      :subname (str "//" (vc "host") ":" (vc "port") "/" (vc "name") "?characterEncoding=UTF-8")
      :user (vc "user")

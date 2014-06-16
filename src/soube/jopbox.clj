@@ -1,7 +1,9 @@
 (ns soube.jopbox
   (:require [oauth.client :as oauth]
             [clj-http.client :as http]
-            [cheshire.core :refer :all]))
+            [clojure.data.json :as json]
+            ;[cheshire.core :refer :all]
+            ))
 
 ; https://github.com/samrat/jopbox thanks
 
@@ -72,7 +74,7 @@
   "Returns a link directly to a file."
   [consumer access-token-response root path]
   (let [request-url (format "https://api.dropbox.com/1/media/%s/%s" root path)]
-    (:url (parse-string (:body (http/post request-url
+    (:url (json/read-str (:body (http/post request-url
                                           {:query-params (make-credentials consumer
                                                                            access-token-response
                                                                            :POST
@@ -111,7 +113,7 @@
   "Retrieve file and folder metadata."
   [consumer access-token-response root path]
   (let [request-url (format "https://api.dropbox.com/1/metadata/%s/%s" root path)]
-    (parse-string (:body (http/get request-url
+    (json/read-str (:body (http/get request-url
                                    {:query-params (make-credentials consumer
                                                                     access-token-response
                                                                     :GET
