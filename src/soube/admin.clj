@@ -175,23 +175,7 @@
     (do
       (jdbc/with-connection
         config/db-spec
-        (if (= config/db-protocol "postgres")
-          (jdbc/create-table
-            (str "if not exists " (config/get-tablename (:server-name req)))
-            [:id :serial "PRIMARY KEY"]
-            [:path :varchar "not null"]
-            [:revision :smallint "not null" "default 0"]
-            [:date :timestamp "not null"]
-            [:modified :timestamp "not null"]
-            [:title :varchar "not null"]
-            [:src :varchar "not null" "default 'write'"]
-            [:account :varchar]
-            [:tags :varchar]
-            [:categories :varchar]
-            [:markdown :text]
-            [:html :text]
-            )
-          (jdbc/create-table
+        (jdbc/create-table
             (str "if not exists " (config/get-tablename (:server-name req)))
             [:id :integer "UNSIGNED" "PRIMARY KEY" "AUTO_INCREMENT"]
             [:path "varchar(64)" "not null"]
@@ -204,8 +188,7 @@
             [:tags "tinytext"]
             [:categories "varchar(64)"]
             [:markdown "mediumtext"]
-            [:html "mediumtext"]
-            )))
+            [:html "mediumtext"]))
       #_(dropbox/create-folder config/consumer
                              (:access-token (:session req))
                              :sandbox

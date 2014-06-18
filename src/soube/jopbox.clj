@@ -74,14 +74,17 @@
   "Returns a link directly to a file."
   [consumer access-token-response root path]
   (let [request-url (format "https://api.dropbox.com/1/media/%s/%s" root path)]
-    (:url (json/read-str (:body (http/post request-url
-                                          {:query-params (make-credentials consumer
-                                                                           access-token-response
-                                                                           :POST
-                                                                           request-url
-                                                                           nil)}))
-                        true
-                                                                           ))))
+    (:url (json/read-str
+            (:body
+              (http/post
+                request-url
+                {:query-params (make-credentials
+                                  consumer
+                                  access-token-response
+                                  :POST
+                                  request-url
+                                  nil)}))
+            :key-fn keyword))))
 
 (defn delta
   ([consumer access-token-response cursor]
@@ -113,12 +116,16 @@
   "Retrieve file and folder metadata."
   [consumer access-token-response root path]
   (let [request-url (format "https://api.dropbox.com/1/metadata/%s/%s" root path)]
-    (json/read-str (:body (http/get request-url
-                                   {:query-params (make-credentials consumer
-                                                                    access-token-response
-                                                                    :GET
-                                                                    request-url
-                                                                    nil)})) true)))
+    (json/read-str
+      (:body (http/get
+                request-url
+                {:query-params (make-credentials
+                                  consumer
+                                  access-token-response
+                                  :GET
+                                  request-url
+                                  nil)}))
+      :key-fn keyword)))
 
 (defn create-folder
   "Creates a folder at `path`. Root can be either :sandbox or :dropbox."
